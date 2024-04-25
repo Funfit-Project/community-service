@@ -62,7 +62,4 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           script: |
-            docker stop $(docker ps -a -q) 
-            docker rm $(docker ps -aq)
-            docker pull ${{ secrets.DOCKER_USERNAME }}/funfit_community
-            docker-compose up --build -d
+            docker-compose pull && docker-compose up -d
