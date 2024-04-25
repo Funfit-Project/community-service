@@ -44,7 +44,7 @@ jobs:
 
     steps:
       - name: docker image build
-        run: docker build -t ${{ secrets.USERNAME }}/funfit_community .
+        run: docker build -t olsohee/funfit_community .
 
       - name: docker login
         uses: docker/login-action@v2
