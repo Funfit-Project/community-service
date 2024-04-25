@@ -1,0 +1,15 @@
+services: # 도커 컴포즈에서 관리할 서비스 목록
+  springboot:
+    build: . # 이미지를 빌드할 디렉토리
+    image: olsohee/funfit_community:latest # 빌드된 이미지 이름
+    container_name: funfit_community # 생성할 컨테이너 이름
+    ports: # 호스트 포트와 도커 컨테이너의 포트 매핑
+      - "8080:8080"
+    depends_on: # 이 서비스가 컨테이너로 구동되기 전에 필요한 의존 서비스
+      - mysql
+      - redis
+  redis:
+    image: redis
+    container_name: redis
+    ports:
+      - "6379:6379"
