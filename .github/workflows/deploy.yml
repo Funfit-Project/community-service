@@ -46,7 +46,7 @@ jobs:
           docker push ${{ secrets.USERNAME }}/funfit_community
 
   deploy:
-    needs: push-to-dockerhub
+    needs: build
     runs-on: ubuntu-latest
 
     steps:
