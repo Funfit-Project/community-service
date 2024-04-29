@@ -19,14 +19,14 @@ public class UserController {
 
     private final UserService userService;
 
-    @PostMapping("/api/join")
+    @PostMapping("/community/join")
     public ResponseEntity join(@RequestBody JoinRequest joinRequest) {
         JoinResponse joinResponse = userService.join(joinRequest);
         return ResponseEntity.status(HttpStatus.OK)
                         .body(new SuccessResponse("사용자 회원가입 성공", joinResponse));
     }
 
-    @PostMapping("/api/login")
+    @PostMapping("/community/login")
     public ResponseEntity login(@RequestBody LoginRequest loginRequest) {
         JwtDto jwtDto = userService.login(loginRequest);
         return ResponseEntity.status(HttpStatus.OK)

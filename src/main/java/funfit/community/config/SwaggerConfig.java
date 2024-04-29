@@ -17,7 +17,7 @@ public class SwaggerConfig {
 
     private Info apiInfo() {
         return new Info()
-                .title("펀핏(Funfit)")
-                .description("펀핏 api 명세서");
+                .title("펀핏-커뮤니티")
+                .description("펀핏 커뮤니티 api");
     }
 }
