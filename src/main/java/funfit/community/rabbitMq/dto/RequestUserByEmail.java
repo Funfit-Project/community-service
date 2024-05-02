@@ -1,15 +1,14 @@
-package funfit.community.user.dto;
+package funfit.community.rabbitMq.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+@Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@Getter
-public class JoinResponse {
+public class RequestUserByEmail {
 
     private String email;
-    private String name;
-    private String role;
+    private String responseQueue; // 응답받을 큐 이름
 }
