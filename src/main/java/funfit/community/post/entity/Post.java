@@ -1,7 +1,6 @@
 package funfit.community.post.entity;
 
 import funfit.community.BaseEntity;
-import funfit.community.user.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 
@@ -13,8 +12,11 @@ public class Post extends BaseEntity {
     @Column(name = "post_id")
     private long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    private User user;
+    @Column(nullable = false)
+    private long userId;
+
+    @Column(nullable = false)
+    private String username;
 
     @Column(nullable = false)
     private String title;
@@ -28,9 +30,10 @@ public class Post extends BaseEntity {
 
     private int views;
 
-    public static Post create(User user, String title, String content, Category category) {
+    public static Post create(long userId, String username, String title, String content, Category category) {
         Post post = new Post();
-        post.user = user;
+        post.userId = userId;
+        post.username = username;
         post.title = title;
         post.content = content;
         post.category = category;

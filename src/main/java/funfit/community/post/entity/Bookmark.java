@@ -1,7 +1,6 @@
 package funfit.community.post.entity;
 
 import funfit.community.BaseEntity;
-import funfit.community.user.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 
@@ -16,13 +15,13 @@ public class Bookmark extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     private Post post;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    private User user;
+    @Column(nullable = false)
+    private long userId;
 
-    public static Bookmark create(Post post, User user) {
+    public static Bookmark create(Post post, long userId) {
         Bookmark bookmark = new Bookmark();
         bookmark.post = post;
-        bookmark.user = user;
+        bookmark.userId = userId;
         return bookmark;
     }
 }

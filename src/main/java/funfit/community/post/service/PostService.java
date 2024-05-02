@@ -11,8 +11,9 @@ import funfit.community.post.entity.Category;
 import funfit.community.post.entity.Post;
 import funfit.community.post.repository.BookmarkRepository;
 import funfit.community.post.repository.PostRepository;
-import funfit.community.user.entity.User;
-import funfit.community.user.repository.UserRepository;
+import funfit.community.rabbitMq.RabbitMqService;
+import funfit.community.rabbitMq.dto.RequestUserByEmail;
+import funfit.community.rabbitMq.dto.ResponseUser;
 import funfit.community.utils.JwtUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -35,22 +36,23 @@ import java.util.Set;
 public class PostService {
 
     private final PostRepository postRepository;
-    private final JwtUtils jwtUtils;
-    private final UserRepository userRepository;
     private final BookmarkRepository bookmarkRepository;
-    private final RedisTemplate<String, String> redisTemplateToString;
-    private final RedisTemplate<String, ReadPostListResponse> redisTemplateToDto;
+    private final JwtUtils jwtUtils;
+    private final RedisTemplate redisTemplate;
+    private final RabbitMqService rabbitMqService;
     private String currentTime;
     private String previousTime;
     private static final String BEST_POSTS = "best_posts";
 
-    public PostService(PostRepository postRepository, JwtUtils jwtUtils, UserRepository userRepository, BookmarkRepository bookmarkRepository, RedisTemplate<String, String> redisTemplateToString, RedisTemplate<String, ReadPostListResponse> redisTemplateToDto) {
+    public PostService(PostRepository postRepository, JwtUtils jwtUtils,
+                       BookmarkRepository bookmarkRepository,
+                       RabbitMqService rabbitMqService,
+                       RedisTemplate redisTemplate) {
         this.postRepository = postRepository;
         this.jwtUtils = jwtUtils;
-        this.userRepository = userRepository;
         this.bookmarkRepository = bookmarkRepository;
-        this.redisTemplateToString = redisTemplateToString;
-        this.redisTemplateToDto = redisTemplateToDto;
+        this.redisTemplate = redisTemplate;
+        this.rabbitMqService = rabbitMqService;
 
         LocalDateTime now = LocalDateTime.now();
         this.currentTime = LocalDateTime.of(now.getYear(), now.getMonth(), now.getDayOfMonth(), now.getHour(), now.getMinute(), now.getSecond()).toString();
@@ -59,11 +61,17 @@ public class PostService {
 
     public CreatePostResponse create(CreatePostRequest createPostRequest, HttpServletRequest request) {
         String email = jwtUtils.getEmailFromHeader(request);
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_USER));
-        Post post = Post.create(user, createPostRequest.getTitle(), createPostRequest.getContent(), Category.find(createPostRequest.getCategoryName()));
+        // 캐시에 사용자가 있는지 확인 후, 없으면 MQ를 통해 받아온 후 저장
+        ResponseUser user = (ResponseUser) redisTemplate.opsForValue().get(email);
+        if (user == null) {
+            rabbitMqService.requestUserByEmail(new RequestUserByEmail(email, "user"));
+        }
+        // 캐시에서 사용자 정보 받아오기
+        ResponseUser responseUser = (ResponseUser) redisTemplate.opsForValue().get(email);
+
+        Post post = Post.create(responseUser.getUserId(), responseUser.getUserName(), createPostRequest.getTitle(), createPostRequest.getContent(), Category.find(createPostRequest.getCategoryName()));
         postRepository.save(post);
-        return new CreatePostResponse(user.getName(), post.getTitle(), post.getContent(), post.getCategory().getName(), post.getCreatedAt());
+        return new CreatePostResponse(post.getUsername(), post.getTitle(), post.getContent(), post.getCategory().getName(), post.getCreatedAt());
     }
 
     public ReadPostResponse readOne(long postId) {
@@ -74,12 +82,13 @@ public class PostService {
         reflectBestPostsInCache(postId);
 
         int bookmarkCount = bookmarkRepository.findByPost(post).size();
-        return new ReadPostResponse(post.getUser().getName(), post.getTitle(), post.getContent(),
+
+        return new ReadPostResponse(post.getUsername(), post.getTitle(), post.getContent(),
                 post.getCategory().getName(), post.getCreatedAt(), post.getUpdatedAt(), bookmarkCount, post.getViews());
     }
 
     public void reflectBestPostsInCache(long postId) {
-        ZSetOperations<String, String> zSetOperations = redisTemplateToString.opsForZSet();
+        ZSetOperations<String, String> zSetOperations = redisTemplate.opsForZSet();
         zSetOperations.incrementScore(currentTime, String.valueOf(postId), 1);
     }
 
@@ -93,9 +102,9 @@ public class PostService {
         updateTime();
 
         // previousTime가 key인 캐시 데이터 조회 및 삭제
-        ZSetOperations<String, String> zSetOperations = redisTemplateToString.opsForZSet();
+        ZSetOperations<String, String> zSetOperations = redisTemplate.opsForZSet();
         Set<String> bestPostIds = zSetOperations.reverseRange(previousTime, 0, 9);
-        redisTemplateToString.delete(previousTime);
+        redisTemplate.delete(previousTime);
 
         // 조회한 best posts에 대한 정보를 DB에서 조회
         List<Post> bestPosts = bestPostIds.stream()
@@ -104,14 +113,14 @@ public class PostService {
 
         // best posts를 dto로 변환
         List<ReadPostListResponse.ReadPostResponseInList> list = bestPosts.stream()
-                .map(post -> new ReadPostListResponse.ReadPostResponseInList(post.getUser().getName(), post.getTitle(), post.getCategory().getName(),
+                .map(post -> new ReadPostListResponse.ReadPostResponseInList(post.getUsername(), post.getTitle(), post.getCategory().getName(),
                         post.getCreatedAt(), post.getUpdatedAt(), bookmarkRepository.findByPost(post).size(), post.getViews()))
                 .toList();
         ReadPostListResponse readPostListResponse = new ReadPostListResponse(list);
 
         // 기존의 best_posts 삭제 후 새로운 값 저장
-        redisTemplateToDto.delete(BEST_POSTS);
-        redisTemplateToDto.opsForList().rightPushAll(BEST_POSTS, readPostListResponse);
+        redisTemplate.delete(BEST_POSTS);
+        redisTemplate.opsForList().rightPushAll(BEST_POSTS, readPostListResponse);
     }
 
     private void updateTime() {
@@ -124,29 +133,34 @@ public class PostService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
         String email = jwtUtils.getEmailFromHeader(request);
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND_USER));
+        // 캐시에 사용자가 있는지 확인 후, 없으면 MQ를 통해 받아온 후 저장
+        ResponseUser user = (ResponseUser) redisTemplate.opsForValue().get(email);
+        if (user == null) {
+            rabbitMqService.requestUserByEmail(new RequestUserByEmail(email, "user"));
+        }
+        // 캐시에서 사용자 정보 받아오기
+        ResponseUser responseUser = (ResponseUser) redisTemplate.opsForValue().get(email);
 
-        Optional<Bookmark> optionalBookmark = bookmarkRepository.findByPostAndUser(post, user);
+        Optional<Bookmark> optionalBookmark = bookmarkRepository.findByPostAndUser(post, responseUser.getUserId());
         if (optionalBookmark.isPresent()) {
             Bookmark bookmark = optionalBookmark.get();
             bookmarkRepository.delete(bookmark);
         } else {
-            bookmarkRepository.save(Bookmark.create(post, user));
+            bookmarkRepository.save(Bookmark.create(post, responseUser.getUserId()));
         }
 
         int bookmarkCount = bookmarkRepository.findByPost(post).size();
-        return new ReadPostResponse(post.getUser().getName(), post.getTitle(), post.getContent(),
+        return new ReadPostResponse(post.getUsername(), post.getTitle(), post.getContent(),
                 post.getCategory().getName(), post.getCreatedAt(), post. getUpdatedAt(), bookmarkCount, post.getViews());
     }
 
     public ReadPostListResponse readBestPosts() {
-        return redisTemplateToDto.opsForList().leftPop(BEST_POSTS);
+        return (ReadPostListResponse) redisTemplate.opsForList().leftPop(BEST_POSTS);
     }
 
     public Slice<ReadPostListResponse.ReadPostResponseInList> readPage(Pageable pageable) {
         Slice<Post> postsSlice = postRepository.findSliceBy(pageable);
-        return postsSlice.map(post -> new ReadPostListResponse.ReadPostResponseInList(post.getUser().getName(), post.getTitle(),
+        return postsSlice.map(post -> new ReadPostListResponse.ReadPostResponseInList(post.getUsername(), post.getTitle(),
                 post.getCategory().getName(), post.getCreatedAt(), post.getUpdatedAt(),
                 bookmarkRepository.findByPost(post).size(), post.getViews()));
     }

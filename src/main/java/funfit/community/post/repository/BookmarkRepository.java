@@ -2,7 +2,6 @@ package funfit.community.post.repository;
 
 import funfit.community.post.entity.Bookmark;
 import funfit.community.post.entity.Post;
-import funfit.community.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,6 +14,6 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
 
     @Query("select b from Bookmark b " +
             "where b.post = :post " +
-            "and b.user = :user")
-    Optional<Bookmark> findByPostAndUser(@Param("post") Post post, @Param("user") User user);
+            "and b.userId = :userId")
+    Optional<Bookmark> findByPostAndUser(@Param("post") Post post, @Param("userId") long userId);
 }
