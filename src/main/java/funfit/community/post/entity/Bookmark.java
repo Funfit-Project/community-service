@@ -1,6 +1,6 @@
 package funfit.community.post.entity;
 
-import funfit.community.BaseEntity;
+import funfit.community.dto.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 

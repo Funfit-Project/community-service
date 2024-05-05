@@ -1,5 +1,6 @@
 package funfit.community.post.service;
 
+import funfit.community.rabbitMq.service.UserService;
 import funfit.community.exception.ErrorCode;
 import funfit.community.exception.customException.BusinessException;
 import funfit.community.post.dto.CreatePostRequest;
@@ -11,11 +12,11 @@ import funfit.community.post.entity.Category;
 import funfit.community.post.entity.Post;
 import funfit.community.post.repository.BookmarkRepository;
 import funfit.community.post.repository.PostRepository;
-import funfit.community.rabbitMq.RabbitMqService;
-import funfit.community.rabbitMq.dto.RequestUserByEmail;
-import funfit.community.rabbitMq.dto.ResponseUser;
+import funfit.community.rabbitMq.dto.UserDto;
 import funfit.community.utils.JwtUtils;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -33,43 +34,28 @@ import java.util.Set;
 @Slf4j
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class PostService {
 
     private final PostRepository postRepository;
     private final BookmarkRepository bookmarkRepository;
     private final JwtUtils jwtUtils;
+    private final UserService userService;
     private final RedisTemplate redisTemplate;
-    private final RabbitMqService rabbitMqService;
     private String currentTime;
     private String previousTime;
     private static final String BEST_POSTS = "best_posts";
 
-    public PostService(PostRepository postRepository, JwtUtils jwtUtils,
-                       BookmarkRepository bookmarkRepository,
-                       RabbitMqService rabbitMqService,
-                       RedisTemplate redisTemplate) {
-        this.postRepository = postRepository;
-        this.jwtUtils = jwtUtils;
-        this.bookmarkRepository = bookmarkRepository;
-        this.redisTemplate = redisTemplate;
-        this.rabbitMqService = rabbitMqService;
-
+    @PostConstruct
+    public void initCurrentTime() {
         LocalDateTime now = LocalDateTime.now();
-        this.currentTime = LocalDateTime.of(now.getYear(), now.getMonth(), now.getDayOfMonth(), now.getHour(), now.getMinute(), now.getSecond()).toString();
-        this.currentTime = this.previousTime = currentTime;
+        this.previousTime = this.currentTime = LocalDateTime.of(now.getYear(), now.getMonth(), now.getDayOfMonth(), now.getHour(), 0, 0).toString();
     }
 
     public CreatePostResponse create(CreatePostRequest createPostRequest, HttpServletRequest request) {
         String email = jwtUtils.getEmailFromHeader(request);
-        // 캐시에 사용자가 있는지 확인 후, 없으면 MQ를 통해 받아온 후 저장
-        ResponseUser user = (ResponseUser) redisTemplate.opsForValue().get(email);
-        if (user == null) {
-            rabbitMqService.requestUserByEmail(new RequestUserByEmail(email, "user"));
-        }
-        // 캐시에서 사용자 정보 받아오기
-        ResponseUser responseUser = (ResponseUser) redisTemplate.opsForValue().get(email);
-
-        Post post = Post.create(responseUser.getUserId(), responseUser.getUserName(), createPostRequest.getTitle(), createPostRequest.getContent(), Category.find(createPostRequest.getCategoryName()));
+        UserDto userDto = userService.getUserDto(email);
+        Post post = Post.create(userDto.getUserId(), userDto.getUserName(), createPostRequest.getTitle(), createPostRequest.getContent(), Category.find(createPostRequest.getCategoryName()));
         postRepository.save(post);
         return new CreatePostResponse(post.getUsername(), post.getTitle(), post.getContent(), post.getCategory().getName(), post.getCreatedAt());
     }
@@ -133,20 +119,14 @@ public class PostService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
         String email = jwtUtils.getEmailFromHeader(request);
-        // 캐시에 사용자가 있는지 확인 후, 없으면 MQ를 통해 받아온 후 저장
-        ResponseUser user = (ResponseUser) redisTemplate.opsForValue().get(email);
-        if (user == null) {
-            rabbitMqService.requestUserByEmail(new RequestUserByEmail(email, "user"));
-        }
-        // 캐시에서 사용자 정보 받아오기
-        ResponseUser responseUser = (ResponseUser) redisTemplate.opsForValue().get(email);
+        UserDto userDto = userService.getUserDto(email);
 
-        Optional<Bookmark> optionalBookmark = bookmarkRepository.findByPostAndUser(post, responseUser.getUserId());
+        Optional<Bookmark> optionalBookmark = bookmarkRepository.findByPostAndUser(post, userDto.getUserId());
         if (optionalBookmark.isPresent()) {
             Bookmark bookmark = optionalBookmark.get();
             bookmarkRepository.delete(bookmark);
         } else {
-            bookmarkRepository.save(Bookmark.create(post, responseUser.getUserId()));
+            bookmarkRepository.save(Bookmark.create(post, userDto.getUserId()));
         }
 
         int bookmarkCount = bookmarkRepository.findByPost(post).size();

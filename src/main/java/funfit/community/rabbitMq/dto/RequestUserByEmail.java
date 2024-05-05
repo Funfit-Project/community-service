@@ -10,5 +10,4 @@ import lombok.NoArgsConstructor;
 public class RequestUserByEmail {
 
     private String email;
-    private String responseQueue; // 응답받을 큐 이름
 }

@@ -1,4 +1,4 @@
-package funfit.community;
+package funfit.community.dto;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;

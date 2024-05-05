@@ -1,15 +1,12 @@
 package funfit.community.rabbitMq.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 
-@Getter
+@Getter @Setter
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-public class ResponseUser {
+public class UserDto {
 
     private long userId;
     private String email;

@@ -5,7 +5,7 @@ import funfit.community.post.dto.CreatePostResponse;
 import funfit.community.post.dto.ReadPostListResponse;
 import funfit.community.post.dto.ReadPostResponse;
 import funfit.community.post.service.PostService;
-import funfit.community.responseDto.SuccessResponse;
+import funfit.community.dto.SuccessResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;

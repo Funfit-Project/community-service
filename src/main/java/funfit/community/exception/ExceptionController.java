@@ -1,7 +1,7 @@
 package funfit.community.exception;
 
 import funfit.community.exception.customException.*;
-import funfit.community.responseDto.ErrorResponse;
+import funfit.community.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
