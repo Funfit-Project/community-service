@@ -47,7 +47,7 @@ public class RedisConfig {
     }
 
     @Bean
-    public RedisTemplate<String, UserDto> redisTemplateForUser() {
+    public RedisTemplate<String, UserDto> redisTemplateForUserDto() {
         RedisTemplate<String, UserDto> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory());
         redisTemplate.setKeySerializer(new StringRedisSerializer());

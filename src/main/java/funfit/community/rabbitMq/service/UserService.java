@@ -12,15 +12,14 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class UserService {
 
-    private final RedisTemplate redisTemplate;
+    private final RedisTemplate<String, UserDto> redisTemplate;
     private final RabbitMqService rabbitMqService;
 
     public UserDto getUserDto(String email) {
-        // 캐시에 사용자가 있는지 확인 후, 없으면 MQ를 통해 받아온 후 저장
-        UserDto user = (UserDto) redisTemplate.opsForValue().get(email);
-        if (user != null) {
-            return user;
+        UserDto userDto = redisTemplate.opsForValue().get(email);
+        if (userDto != null) {
+            return userDto;
         }
-        return rabbitMqService.requestUserByEmail(new RequestUserByEmail(email));
+        return rabbitMqService.requestUserByEmail(new RequestUserByEmail(email, "community"));
     }
 }
