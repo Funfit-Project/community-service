@@ -55,9 +55,10 @@ public class PostService {
     public CreatePostResponse create(CreatePostRequest createPostRequest, HttpServletRequest request) {
         String email = jwtUtils.getEmailFromHeader(request);
         UserDto userDto = userService.getUserDto(email);
-        Post post = Post.create(userDto.getUserId(), userDto.getUserName(), createPostRequest.getTitle(), createPostRequest.getContent(), Category.find(createPostRequest.getCategoryName()));
+        Post post = Post.create(userDto.getUserId(), userDto.getEmail(), createPostRequest.getTitle(), createPostRequest.getContent(), Category.find(createPostRequest.getCategoryName()));
         postRepository.save(post);
-        return new CreatePostResponse(post.getUsername(), post.getTitle(), post.getContent(), post.getCategory().getName(), post.getCreatedAt());
+
+        return new CreatePostResponse(userDto.getUserName(), post.getTitle(), post.getContent(), post.getCategory().getName(), post.getCreatedAt());
     }
 
     public ReadPostResponse readOne(long postId) {
@@ -68,8 +69,8 @@ public class PostService {
         reflectBestPostsInCache(postId);
 
         int bookmarkCount = bookmarkRepository.findByPost(post).size();
-
-        return new ReadPostResponse(post.getUsername(), post.getTitle(), post.getContent(),
+        UserDto userDto = userService.getUserDto(post.getEmail());
+        return new ReadPostResponse(userDto.getUserName(), post.getTitle(), post.getContent(),
                 post.getCategory().getName(), post.getCreatedAt(), post.getUpdatedAt(), bookmarkCount, post.getViews());
     }
 
@@ -99,8 +100,11 @@ public class PostService {
 
         // best posts를 dto로 변환
         List<ReadPostListResponse.ReadPostResponseInList> list = bestPosts.stream()
-                .map(post -> new ReadPostListResponse.ReadPostResponseInList(post.getUsername(), post.getTitle(), post.getCategory().getName(),
-                        post.getCreatedAt(), post.getUpdatedAt(), bookmarkRepository.findByPost(post).size(), post.getViews()))
+                .map(post -> {
+                    UserDto postUserDto = userService.getUserDto(post.getEmail());
+                    return new ReadPostListResponse.ReadPostResponseInList(postUserDto.getUserName(), post.getTitle(), post.getCategory().getName(),
+                            post.getCreatedAt(), post.getUpdatedAt(), bookmarkRepository.findByPost(post).size(), post.getViews());
+                })
                 .toList();
         ReadPostListResponse readPostListResponse = new ReadPostListResponse(list);
 
@@ -130,7 +134,9 @@ public class PostService {
         }
 
         int bookmarkCount = bookmarkRepository.findByPost(post).size();
-        return new ReadPostResponse(post.getUsername(), post.getTitle(), post.getContent(),
+
+        UserDto postUserDto = userService.getUserDto(post.getEmail());
+        return new ReadPostResponse(postUserDto.getUserName(), post.getTitle(), post.getContent(),
                 post.getCategory().getName(), post.getCreatedAt(), post. getUpdatedAt(), bookmarkCount, post.getViews());
     }
 
@@ -140,8 +146,11 @@ public class PostService {
 
     public Slice<ReadPostListResponse.ReadPostResponseInList> readPage(Pageable pageable) {
         Slice<Post> postsSlice = postRepository.findSliceBy(pageable);
-        return postsSlice.map(post -> new ReadPostListResponse.ReadPostResponseInList(post.getUsername(), post.getTitle(),
-                post.getCategory().getName(), post.getCreatedAt(), post.getUpdatedAt(),
-                bookmarkRepository.findByPost(post).size(), post.getViews()));
+        return postsSlice.map(post -> {
+            UserDto postUserDto = userService.getUserDto(post.getEmail());
+            return new ReadPostListResponse.ReadPostResponseInList(postUserDto.getUserName(), post.getTitle(),
+                    post.getCategory().getName(), post.getCreatedAt(), post.getUpdatedAt(),
+                    bookmarkRepository.findByPost(post).size(), post.getViews());
+        });
     }
 }

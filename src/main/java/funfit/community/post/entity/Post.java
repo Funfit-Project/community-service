@@ -16,7 +16,7 @@ public class Post extends BaseEntity {
     private long userId;
 
     @Column(nullable = false)
-    private String username;
+    private String email;
 
     @Column(nullable = false)
     private String title;
@@ -30,10 +30,10 @@ public class Post extends BaseEntity {
 
     private int views;
 
-    public static Post create(long userId, String username, String title, String content, Category category) {
+    public static Post create(long userId, String email, String title, String content, Category category) {
         Post post = new Post();
         post.userId = userId;
-        post.username = username;
+        post.email = email;
         post.title = title;
         post.content = content;
         post.category = category;
