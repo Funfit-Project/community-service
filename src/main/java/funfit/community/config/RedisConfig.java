@@ -29,7 +29,7 @@ public class RedisConfig {
     }
 
     @Bean
-    public RedisTemplate<String, String> redisTemplateToString() {
+    public RedisTemplate<String, String> StringRedisTemplate() {
         RedisTemplate<String, String> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory());
         redisTemplate.setKeySerializer(new StringRedisSerializer());
@@ -38,7 +38,7 @@ public class RedisConfig {
     }
 
     @Bean
-    public RedisTemplate<String, ReadPostListResponse> redisTemplateToDto() {
+    public RedisTemplate<String, ReadPostListResponse> ReadPostListResponseRedisTemplate() {
         RedisTemplate<String, ReadPostListResponse> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory());
         redisTemplate.setKeySerializer(new StringRedisSerializer());
@@ -47,7 +47,7 @@ public class RedisConfig {
     }
 
     @Bean
-    public RedisTemplate<String, UserDto> redisTemplateForUserDto() {
+    public RedisTemplate<String, UserDto> UserDtoRedisTemplate() {
         RedisTemplate<String, UserDto> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory());
         redisTemplate.setKeySerializer(new StringRedisSerializer());
