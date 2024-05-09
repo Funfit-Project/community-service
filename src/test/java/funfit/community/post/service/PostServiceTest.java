@@ -136,7 +136,7 @@ class PostServiceTest {
     }
 
     private void creatPost() {
-        em.createNativeQuery("alter table post auto_increment = 1;")
+        em.createNativeQuery("alter table post alter column post_id restart with 1;")
                 .executeUpdate();
         Post post = Post.create(postUserEmail, "title", "content", Category.QUESTION);
         postRepository.save(post);

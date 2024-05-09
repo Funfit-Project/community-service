@@ -6,10 +6,9 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 
@@ -22,8 +21,9 @@ public class JwtUtils {
     private final Key signingKey;
     private final JwtParser jwtParser;
 
-    public JwtUtils(@Value("${jwt.secret}") String secretKey) {
-        this.signingKey = Keys.hmacShaKeyFor(secretKey.getBytes());
+    @Autowired
+    public JwtUtils(Key signingKey) {
+        this.signingKey = signingKey;
         this.jwtParser = Jwts.parserBuilder().setSigningKey(signingKey).build();
     }
 

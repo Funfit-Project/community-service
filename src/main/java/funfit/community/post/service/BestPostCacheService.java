@@ -49,7 +49,7 @@ public class BestPostCacheService {
         return readPostListResponseRedisTemplate.opsForList().leftPop(BEST_POSTS);
     }
 
-    @Scheduled(cron = "0 */1 * * * *")
+    @Scheduled(cron = "0 0 * * * *") // 매시간 정각마다 실행
     public void saveBestPostsDtoInRedis() {
         updateTime();
 
