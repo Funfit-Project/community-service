@@ -1,174 +1,91 @@
 package funfit.community.post.service;
 
 import funfit.community.post.dto.CreatePostRequest;
-import funfit.community.post.dto.CreatePostResponse;
-import funfit.community.post.dto.ReadPostResponse;
-import funfit.community.post.entity.Bookmark;
 import funfit.community.post.entity.Category;
 import funfit.community.post.entity.Post;
-import funfit.community.post.repository.BookmarkRepository;
 import funfit.community.post.repository.PostRepository;
-import funfit.community.rabbitMq.dto.UserDto;
-import funfit.community.rabbitMq.service.RabbitMqService;
-import funfit.community.rabbitMq.service.UserService;
-import funfit.community.utils.JwtUtils;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import jakarta.persistence.EntityManager;
-import jakarta.servlet.http.HttpServletRequest;
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.security.Key;
-import java.time.Instant;
-import java.util.Date;
+import java.util.ArrayList;
+import java.util.List;
 
 @Transactional
 @SpringBootTest
 class PostServiceTest {
 
-    @Autowired private Key signingKey;
-    @Autowired private EntityManager em;
-    private PostService postService;
-    private RedisTemplate<String, UserDto> userDtoRedisTemplate;
-    private PostRepository postRepository;
-    private BookmarkRepository bookmarkRepository;
-
-    private String postUserEmail = "postUser@naver.com";
-    private String readUserEmail = "readUser@naver.com";
-
-    @Autowired
-    public PostServiceTest(JwtUtils jwtUtils,
-                           RedisTemplate<String, UserDto> userDtoRedisTemplate,
-                           RabbitMqService rabbitMqService,
-                           BestPostCacheService bestPostCacheService,
-                           PostRepository postRepository,
-                           BookmarkRepository bookmarkRepository) {
-        this.postService = new PostService(jwtUtils, new StubUserService(userDtoRedisTemplate, rabbitMqService),
-                bestPostCacheService, postRepository, bookmarkRepository);
-        this.userDtoRedisTemplate = userDtoRedisTemplate;
-        this.postRepository = postRepository;
-        this.bookmarkRepository = bookmarkRepository;
-    }
-
-    @BeforeEach
-    public void initUserInRedis() {
-        userDtoRedisTemplate.opsForValue().set(postUserEmail, new UserDto(1, postUserEmail, "postUser", "회원"));
-        userDtoRedisTemplate.opsForValue().set(readUserEmail, new UserDto(2, readUserEmail, "readUser", "회원"));
-    }
+    @Autowired private PostService postService;
+    @Autowired private PostRepository postRepository;
 
     @Test
     @DisplayName("게시글 등록 성공")
-    public void createPostSuccess() {
+    void createPostSuccess() {
         // given
-        CreatePostRequest requestDto = new CreatePostRequest("title", "content", "질문");
-        HttpServletRequest request = generateRequest(postUserEmail);
+        List<String> imageUrls = new ArrayList<>();
+        imageUrls.add("url1");
+        imageUrls.add("url2");
+        CreatePostRequest requestDto = new CreatePostRequest("title", "content", "질문", imageUrls);
 
         // when
-        CreatePostResponse responseDto = postService.create(requestDto, request);
+        long postId = postService.create(requestDto, "user@naver.com");
 
         // then
-        Assertions.assertThat(responseDto.getUserName()).isEqualTo("postUser");
-        Assertions.assertThat(responseDto.getTitle()).isEqualTo("title");
-        Assertions.assertThat(responseDto.getContent()).isEqualTo("content");
-        Assertions.assertThat(responseDto.getCategory()).isEqualTo("질문");
+        Assertions.assertThat(postRepository.findById(postId)).isPresent();
+        Post post = postRepository.findById(postId).get();
+
+        Assertions.assertThat(post.getWriterEmail()).isEqualTo("user@naver.com");
+        Assertions.assertThat(post.getTitle()).isEqualTo("title");
+        Assertions.assertThat(post.getContent()).isEqualTo("content");
+        Assertions.assertThat(post.getCategory()).isEqualTo(Category.QUESTION);
     }
 
     @Test
-    @DisplayName("게시글 단일 조회 성공")
-    public void readOneSuccess() {
+    @DisplayName("조회수 증가 성공")
+    void increaseViewsSuccess() {
         // given
-        creatPost();
+        Post post = Post.create("user@naver.com", "title", "content", Category.FREE);
+        postRepository.save(post);
 
         // when
-        ReadPostResponse responseDto = postService.readOne(1);
+        postService.increaseViews(post.getId());
 
         // then
-        Post post = postRepository.findById(1l).get();
-        int bookmarkCount = bookmarkRepository.findByPost(post).size();
-        UserDto userDto = userDtoRedisTemplate.opsForValue().get(post.getEmail());
-
-        Assertions.assertThat(responseDto.getUserName()).isEqualTo(userDto.getUserName());
-        Assertions.assertThat(responseDto.getTitle()).isEqualTo(post.getTitle());
-        Assertions.assertThat(responseDto.getContent()).isEqualTo(post.getContent());
-        Assertions.assertThat(responseDto.getCategory()).isEqualTo(post.getCategory().getName());
-        Assertions.assertThat(responseDto.getBookmarkCount()).isEqualTo(bookmarkCount);
-        Assertions.assertThat(responseDto.getViews()).isEqualTo(post.getViews());
+        Post savedPost = postRepository.findById(post.getId()).get();
+        Assertions.assertThat(savedPost.getViews()).isEqualTo(1);
     }
 
     @Test
     @DisplayName("북마크 등록 성공")
-    public void addBookmark() {
+    void addBookmarkSuccess() {
         // given
-        creatPost();
+        Post post = Post.create("user@naver.com", "title", "content", Category.FREE);
+        postRepository.save(post);
 
         // when
-        ReadPostResponse bookmark = postService.bookmark(1, generateRequest(readUserEmail));
+        postService.bookmark(post.getId(), "bookmarkUser@naver.com");
 
         // then
-        Assertions.assertThat(bookmark.getBookmarkCount()).isEqualTo(1);
+        Post savedPost = postRepository.findById(post.getId()).get();
+        Assertions.assertThat(savedPost.getBookmarks().size()).isEqualTo(1);
     }
 
     @Test
     @DisplayName("북마크 취소 성공")
-    public void cancelBookmark() {
+    void cancelBookmarkSuccess() {
         // given
-        creatPost();
-
-        Post post = postRepository.findById(1l).get();
-
-        long readUserId = userDtoRedisTemplate.opsForValue().get(readUserEmail).getUserId();
-        bookmarkRepository.save(Bookmark.create(post, readUserId));
+        Post post = Post.create("user@naver.com", "title", "content", Category.FREE);
+        postRepository.save(post);
 
         // when
-        ReadPostResponse bookmark = postService.bookmark(1, generateRequest(readUserEmail));
+        postService.bookmark(post.getId(), "bookmarkUser@naver.com");
+        postService.bookmark(post.getId(), "bookmarkUser@naver.com");
 
         // then
-        Assertions.assertThat(bookmark.getBookmarkCount()).isEqualTo(0);
-    }
-
-    private void creatPost() {
-        em.createNativeQuery("alter table post alter column post_id restart with 1;")
-                .executeUpdate();
-        Post post = Post.create(postUserEmail, "title", "content", Category.QUESTION);
-        postRepository.save(post);
-    }
-
-    private HttpServletRequest generateRequest(String email) {
-        Claims claims = Jwts.claims()
-                .setSubject(email);
-        String accessToken = Jwts.builder()
-                .setClaims(claims)
-                .setIssuedAt(Date.from(Instant.now()))
-                .setExpiration(Date.from(Instant.now().plusSeconds(60 * 60)))
-                .signWith(SignatureAlgorithm.HS256, signingKey)
-                .compact();
-
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.addHeader("Authorization",  "Bearer " + accessToken);
-        return request;
-    }
-
-    private class StubUserService extends UserService {
-
-        private RedisTemplate<String, UserDto> redisTemplate;
-
-        public StubUserService(RedisTemplate<String, UserDto> redisTemplate, RabbitMqService rabbitMqService) {
-            super(redisTemplate, rabbitMqService);
-            this.redisTemplate = redisTemplate;
-        }
-
-        @Override
-        public UserDto getUserDto(String email) {
-            return redisTemplate.opsForValue().get(email);
-        }
+        Post savedPost = postRepository.findById(post.getId()).get();
+        Assertions.assertThat(savedPost.getBookmarks().size()).isEqualTo(0);
     }
 }
