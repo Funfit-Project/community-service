@@ -74,7 +74,8 @@ public class BestPostCacheService {
                         .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
                     User postUser = userService.getUserDto(post.getWriterEmail());
                     return new ReadPostInListResponse(post.getTitle(), postUser.getUserName(), post.getCategory().getName(),
-                            post.getCreatedAt(), post.getUpdatedAt(), post.getLikes().size(), post.getBookmarks().size(), post.getViews());
+                            post.getCreatedAt(), post.getUpdatedAt(),
+                            post.getComments().size(), post.getLikes().size(), post.getBookmarks().size(), post.getViews());
                 })
                 .toList();
         return new ReadBestPostsResponse(previousTime, 10, bestPostDtos);

@@ -44,7 +44,8 @@ public class PostQueryService {
                 .map(post -> {
                     User user = userService.getUserDto(post.getWriterEmail());
                     return new ReadPostInListResponse(post.getTitle(), user.getUserName(), post.getCategory().getName(),
-                            post.getCreatedAt(), post.getUpdatedAt(), post.getLikes().size(), post.getBookmarks().size(), post.getViews());
+                            post.getCreatedAt(), post.getUpdatedAt(),
+                            post.getComments().size(), post.getLikes().size(), post.getBookmarks().size(), post.getViews());
                 });
     }
 
