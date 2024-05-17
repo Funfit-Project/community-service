@@ -29,4 +29,8 @@ public class Like {
     public void setPost(Post post) {
         this.post = post;
     }
+
+    public void deleteFromPost() {
+        this.post.getLikes().remove(this);
+    }
 }

@@ -31,6 +31,12 @@ public class Post extends BaseEntity {
 
     private int views;
 
+    private int likeCount; // 반정규화
+
+    private int bookmarkCount; // 반정규화
+
+    private int commentCount; // 반정규화
+
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Image> images = new ArrayList<>();
 
@@ -59,6 +65,7 @@ public class Post extends BaseEntity {
     public void addComment(Comment comment) {
         this.getComments().add(comment);
         comment.setPost(this);
+        this.commentCount++;
     }
 
     // 연관관계 편의 메서드
@@ -71,12 +78,14 @@ public class Post extends BaseEntity {
     public void addLike(Like like) {
         this.getLikes().add(like);
         like.setPost(this);
+        this.likeCount++;
     }
 
     // 연관관계 편의 메서드
     public void addBookmark(Bookmark bookmark) {
         this.getBookmarks().add(bookmark);
         bookmark.setPost(this);
+        this.bookmarkCount++;
     }
 
     public void updateContent(String newContent) {

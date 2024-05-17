@@ -4,6 +4,7 @@ import funfit.community.post.dto.CreatePostRequest;
 import funfit.community.post.dto.ReadBestPostsResponse;
 import funfit.community.post.dto.ReadPostInListResponse;
 import funfit.community.post.dto.ReadPostResponse;
+import funfit.community.post.entity.Post;
 import funfit.community.post.service.PostService;
 import funfit.community.dto.SuccessResponse;
 import funfit.community.query.PostQueryService;
@@ -17,6 +18,8 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -63,5 +66,13 @@ public class PostController {
         ReadBestPostsResponse readBestPostsResponse = postQueryService.readBestPosts();
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new SuccessResponse("실시간 인기글 조회 성공", readBestPostsResponse));
+    }
+
+    @PostMapping("/community/posts/{postId}/like")
+    public ResponseEntity likePost(@PathVariable long postId, HttpServletRequest request) {
+        postService.likePost(postId, jwtUtils.getEmailFromHeader(request));
+        ReadPostResponse readPostResponse = postQueryService.readPost(postId);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new SuccessResponse("좋아요 등록/취소 성공", readPostResponse));
     }
 }
