@@ -8,7 +8,7 @@ import java.io.Serializable;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserDto implements Serializable {
+public class User implements Serializable {
 
     private long userId;
     private String email;

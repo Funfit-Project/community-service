@@ -1,7 +1,7 @@
 package funfit.community.rabbitMq.service;
 
 import funfit.community.rabbitMq.dto.RequestUserByEmail;
-import funfit.community.rabbitMq.dto.UserDto;
+import funfit.community.rabbitMq.dto.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -18,21 +18,21 @@ import java.util.LinkedHashMap;
 public class RabbitMqService {
 
     private final RabbitTemplate rabbitTemplate;
-    private final RedisTemplate<String, UserDto> redisTemplate;
+    private final RedisTemplate<String, User> redisTemplate;
 
-    public UserDto requestUserByEmail(RequestUserByEmail dto) {
+    public User requestUserByEmail(RequestUserByEmail dto) {
         Object message = rabbitTemplate.convertSendAndReceive("request_user_by_email", dto);
         log.info("response message = {}", message.toString());
 
-        UserDto userDto = convertMessageToUserDto(message);
-        redisTemplate.opsForValue().set(userDto.getEmail(), userDto);
+        User user = convertMessageToUserDto(message);
+        redisTemplate.opsForValue().set(user.getEmail(), user);
         log.info("Redis | 사용자 정보 캐시 저장 완료");
-        return userDto;
+        return user;
     }
 
-    private UserDto convertMessageToUserDto(Object response) {
+    private User convertMessageToUserDto(Object response) {
         LinkedHashMap map = (LinkedHashMap) response;
-        UserDto dto = new UserDto();
+        User dto = new User();
 
         dto.setUserId((Integer)map.get("userId"));
         dto.setEmail((String)map.get("email"));
@@ -46,8 +46,8 @@ public class RabbitMqService {
         log.info("RabbitMQ | on message in edited_user_id_for_community queue, message = {}", userId);
         String url = "http://localhost:8081/userInfo/community/" + userId;
         RestTemplate restTemplate = new RestTemplate();
-        UserDto userDto = restTemplate.getForObject(url, UserDto.class);
-        redisTemplate.opsForValue().set(userDto.getEmail(), userDto);
+        User user = restTemplate.getForObject(url, User.class);
+        redisTemplate.opsForValue().set(user.getEmail(), user);
         log.info("Redis | 사용자 정보 수정사항 반영 완료");
     }
 }

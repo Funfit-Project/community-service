@@ -1,27 +1,34 @@
 package funfit.community.post.entity;
 
-import funfit.community.dto.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 
 @Entity
 @Getter
-public class Bookmark extends BaseEntity {
+public class Bookmark {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "bookmark_id")
     private long id;
 
+    @Column(nullable = false)
+    private String bookmarkUserEmail;
+
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "post_id")
     private Post post;
 
-    @Column(nullable = false)
-    private long userId;
-
-    public static Bookmark create(Post post, long userId) {
+    public static Bookmark create(String bookmarkUserEmail) {
         Bookmark bookmark = new Bookmark();
-        bookmark.post = post;
-        bookmark.userId = userId;
+        bookmark.bookmarkUserEmail = bookmarkUserEmail;
         return bookmark;
+    }
+
+    public void setPost(Post post) {
+        this.post = post;
+    }
+
+    public void deleteFromPost() {
+        this.post.getBookmarks().remove(this);
     }
 }

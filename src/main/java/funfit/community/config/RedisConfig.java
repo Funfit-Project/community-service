@@ -1,7 +1,7 @@
 package funfit.community.config;
 
-import funfit.community.post.dto.ReadPostListResponse;
-import funfit.community.rabbitMq.dto.UserDto;
+import funfit.community.post.dto.ReadBestPostsResponse;
+import funfit.community.rabbitMq.dto.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -38,20 +38,20 @@ public class RedisConfig {
     }
 
     @Bean
-    public RedisTemplate<String, ReadPostListResponse> ReadPostListResponseRedisTemplate() {
-        RedisTemplate<String, ReadPostListResponse> redisTemplate = new RedisTemplate<>();
+    public RedisTemplate<String, ReadBestPostsResponse> ReadPostListResponseRedisTemplate() {
+        RedisTemplate<String, ReadBestPostsResponse> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory());
         redisTemplate.setKeySerializer(new StringRedisSerializer());
-        redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(ReadPostListResponse.class));
+        redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(ReadBestPostsResponse.class));
         return redisTemplate;
     }
 
     @Bean
-    public RedisTemplate<String, UserDto> UserDtoRedisTemplate() {
-        RedisTemplate<String, UserDto> redisTemplate = new RedisTemplate<>();
+    public RedisTemplate<String, User> UserDtoRedisTemplate() {
+        RedisTemplate<String, User> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory());
         redisTemplate.setKeySerializer(new StringRedisSerializer());
-        redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(UserDto.class));
+        redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(User.class));
         return redisTemplate;
     }
 }

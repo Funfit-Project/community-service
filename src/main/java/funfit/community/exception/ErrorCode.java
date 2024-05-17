@@ -25,11 +25,10 @@ public enum ErrorCode {
     DUPLICATED_RELATIONSHIP(HttpStatus.BAD_REQUEST, "이미 등록된 트레이너입니다"),
     INVALID_ROLE(HttpStatus.BAD_REQUEST, "잘못된 사용자 역할입니다."),
 
-    // schedule
-    ALREADY_RESERVATION(HttpStatus.BAD_REQUEST, "이미 예약된 시간입니다."),
-
     // post
     INVALID_CATEGORY(HttpStatus.BAD_REQUEST, "잘못된 카테고리입니다."),
+    NOT_FOUND_POST(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없습니다."),
+
 
     // jwt
     EXPIRED_JWT(HttpStatus.BAD_REQUEST, "만료된 토큰입니다."),

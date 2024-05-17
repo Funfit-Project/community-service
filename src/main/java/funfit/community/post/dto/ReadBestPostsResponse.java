@@ -7,12 +7,11 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 @Getter
-@NoArgsConstructor
 @AllArgsConstructor
-public class CreatePostRequest {
+@NoArgsConstructor
+public class ReadBestPostsResponse {
 
-    private String title;
-    private String content;
-    private String categoryName;
-    private List<String> imageUrls;
+    private String time;
+    private int count;
+    private List<ReadPostInListResponse> bestPostDtos;
 }

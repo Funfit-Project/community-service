@@ -2,11 +2,11 @@ package funfit.community.post.service;
 
 import funfit.community.exception.ErrorCode;
 import funfit.community.exception.customException.BusinessException;
-import funfit.community.post.dto.ReadPostListResponse;
+import funfit.community.post.dto.ReadBestPostsResponse;
+import funfit.community.post.dto.ReadPostInListResponse;
 import funfit.community.post.entity.Post;
-import funfit.community.post.repository.BookmarkRepository;
 import funfit.community.post.repository.PostRepository;
-import funfit.community.rabbitMq.dto.UserDto;
+import funfit.community.rabbitMq.dto.User;
 import funfit.community.rabbitMq.service.UserService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -28,9 +28,8 @@ public class BestPostCacheService {
 
     private final UserService userService;
     private final RedisTemplate<String, String> stringRedisTemplate;
-    private final RedisTemplate<String, ReadPostListResponse> readPostListResponseRedisTemplate;
+    private final RedisTemplate<String, ReadBestPostsResponse> readBestPostsResponseRedisTemplate;
     private final PostRepository postRepository;
-    private final BookmarkRepository bookmarkRepository;
     private String currentTime;
     private String previousTime;
     private static final String BEST_POSTS = "best_posts";
@@ -45,37 +44,40 @@ public class BestPostCacheService {
         stringRedisTemplate.opsForZSet().incrementScore(currentTime, String.valueOf(postId), 1);
     }
 
-    public ReadPostListResponse readBestPosts() {
-        return readPostListResponseRedisTemplate.opsForList().leftPop(BEST_POSTS);
+    public ReadBestPostsResponse readBestPosts() {
+        return readBestPostsResponseRedisTemplate.opsForValue().get(BEST_POSTS);
     }
 
-    @Scheduled(cron = "0 0 * * * *") // 매시간 정각마다 실행
+    @Scheduled(cron = "0 0 * * * *") // 매 시간 정각마다 실행
     public void saveBestPostsDtoInRedis() {
         updateTime();
 
-        ReadPostListResponse bestPostsDto = generateBestPostsDto();
+        ReadBestPostsResponse readBestPostsResponse = generateBestPostsDto();
 
-        readPostListResponseRedisTemplate.delete(BEST_POSTS);
-        readPostListResponseRedisTemplate.opsForList().set(BEST_POSTS, 0, bestPostsDto);
+        if (readBestPostsResponseRedisTemplate.hasKey(BEST_POSTS)) {
+            readBestPostsResponseRedisTemplate.delete(BEST_POSTS);
+        }
+
+        // 인기글 dto를 레디스에 저장
+        readBestPostsResponseRedisTemplate.opsForValue().set(BEST_POSTS, readBestPostsResponse);
     }
 
-    private ReadPostListResponse generateBestPostsDto() {
-        // previousTime 캐시 데이터 조회 (조회수 높은 순으로 10개의 postId) 및 삭제
+    private ReadBestPostsResponse generateBestPostsDto() {
+        // previousTime 변수에 해당하는 key에 저장된 게시글 id들 중 조회수가 높은 10개의 id를 조회 및 삭제
         Set<String> postIds = stringRedisTemplate.opsForZSet().reverseRange(previousTime, 0, 9);
         stringRedisTemplate.delete(previousTime);
 
-        // dto 변환
-        List<ReadPostListResponse.ReadPostResponseInList> bestPostDtos = postIds.stream()
+        // 게시글 id에 해당하는 데이터를 DB에서 조회한 후 dto 변환
+        List<ReadPostInListResponse> bestPostDtos = postIds.stream()
                 .map(postId -> {
                     Post post = postRepository.findById(Long.valueOf(postId))
                         .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
-                    UserDto postUserDto = userService.getUserDto(post.getEmail());
-                    int bookmarkCount = bookmarkRepository.findByPost(post).size();
-                    return new ReadPostListResponse.ReadPostResponseInList(postUserDto, post, bookmarkCount);
+                    User postUser = userService.getUserDto(post.getWriterEmail());
+                    return new ReadPostInListResponse(post.getTitle(), postUser.getUserName(), post.getCategory().getName(),
+                            post.getCreatedAt(), post.getUpdatedAt(), post.getLikes().size(), post.getBookmarks().size(), post.getViews());
                 })
                 .toList();
-
-        return new ReadPostListResponse(bestPostDtos.size(), bestPostDtos);
+        return new ReadBestPostsResponse(previousTime, 10, bestPostDtos);
     }
 
     private void updateTime() {

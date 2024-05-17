@@ -11,9 +11,9 @@ import java.util.Arrays;
 @Getter
 public enum Category {
 
-    QUESTION("질문"), // 질문게시판
-    WORKOUT("운동인증"), // 운동 인증
-    DIET("식단인증"); // 식단 인증
+    QUESTION("질문"),
+    FREE("자유"),
+    INFO("정보");
 
     private final String name;
 
