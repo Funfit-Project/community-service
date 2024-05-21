@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,7 @@ import java.util.concurrent.Executors;
 
 @Transactional
 @SpringBootTest
+@Rollback(value = false)
 class PostServiceTest {
 
     @Autowired private PostService postService;
@@ -78,43 +80,78 @@ class PostServiceTest {
     }
 
     @Test
-    @DisplayName("북마크 등록 성공")
-    void addBookmarkSuccess() {
-        // given
-        Post post = Post.create("user@naver.com", "title", "content", Category.FREE);
-        postRepository.save(post);
+    @DisplayName("북마크 등록 성공-한 사람이 동시에 여러번 좋아요를 눌러도 중복 저장되지 않아야 한다.")
+    void addBookmarkSuccessByOneUser() throws InterruptedException {
+        long savedPostId = initService.initPost();
 
-        // when
-        postService.bookmark(post.getId(), "bookmarkUser@naver.com");
+        int numberOfThreads = 11;
+        CountDownLatch countDownLatch = new CountDownLatch(numberOfThreads);
+        ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
 
-        // then
-        Post savedPost = postRepository.findById(post.getId()).get();
+        for (int i = 0; i < numberOfThreads; i++) {
+            executorService.execute(() -> {
+                postService.bookmark(savedPostId, "bookmarkUser@naver.com");
+                countDownLatch.countDown();
+            });
+        }
+        countDownLatch.await();
+
+        Post savedPost = postRepository.findById(savedPostId).get();
         Assertions.assertThat(savedPost.getBookmarks().size()).isEqualTo(1);
+        Assertions.assertThat(savedPost.getBookmarkCount()).isEqualTo(1);
     }
 
     @Test
-    @DisplayName("북마크 취소 성공")
-    void cancelBookmarkSuccess() {
-        // given
-        Post post = Post.create("user@naver.com", "title", "content", Category.FREE);
-        postRepository.save(post);
+    @DisplayName("북마크 취소 성공-한 사람이 동시에 여러번 좋아요를 눌러도 중복 저장되지 않아야 한다.")
+    void deleteBookmarkSuccessByOneUser() throws InterruptedException {
+        long savedPostId = initService.initPost();
 
-        // when
-        postService.bookmark(post.getId(), "bookmarkUser@naver.com");
-        postService.bookmark(post.getId(), "bookmarkUser@naver.com");
+        int numberOfThreads = 10;
+        CountDownLatch countDownLatch = new CountDownLatch(numberOfThreads);
+        ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
 
-        // then
-        Post savedPost = postRepository.findById(post.getId()).get();
+        for (int i = 0; i < numberOfThreads; i++) {
+            executorService.execute(() -> {
+                postService.bookmark(savedPostId, "bookmarkUser@naver.com");
+                countDownLatch.countDown();
+            });
+        }
+        countDownLatch.await();
+
+        Post savedPost = postRepository.findById(savedPostId).get();
         Assertions.assertThat(savedPost.getBookmarks().size()).isEqualTo(0);
+        Assertions.assertThat(savedPost.getBookmarkCount()).isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("북마크 등록 성공-여러 사람이 동시에 북마크를 해도 값이 덮어씌워지지 않아야 한다.")
+    void addBookmarkSuccessByUsers() throws InterruptedException {
+        long savedPostId = initService.initPost();
+
+        int numberOfThreads = 10;
+        CountDownLatch countDownLatch = new CountDownLatch(numberOfThreads);
+        ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
+
+        for (int i = 1; i <= numberOfThreads; i++) {
+            String email = "user" + i + "@naver.com";
+            executorService.execute(() -> {
+                postService.bookmark(savedPostId, email);
+                countDownLatch.countDown();
+            });
+        }
+        countDownLatch.await();
+
+        Post savedPost = postRepository.findById(savedPostId).get();
+        Assertions.assertThat(savedPost.getBookmarks().size()).isEqualTo(10);
+        Assertions.assertThat(savedPost.getBookmarkCount()).isEqualTo(10);
     }
 
     @Test
     @DisplayName("좋아요 등록 성공-한 사람이 동시에 여러번 좋아요를 눌러도 중복 저장되지 않아야 한다.")
-    void likePostSuccess() throws InterruptedException {
-        // post 엔티티 저장을 위한 메소드 호출
+    void likePostSuccessByOneUser() throws InterruptedException {
         long savedPostId = initService.initPost();
 
-        int numberOfThreads = 10;
+        int numberOfThreads = 11;
         CountDownLatch countDownLatch = new CountDownLatch(numberOfThreads);
         ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
 
@@ -127,7 +164,31 @@ class PostServiceTest {
         countDownLatch.await();
 
         Post savedPost = postRepository.findById(savedPostId).get();
+        Assertions.assertThat(savedPost.getLikes().size()).isEqualTo(1);
         Assertions.assertThat(savedPost.getLikeCount()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("좋아요 등록 성공-여러 사람이 동시에 좋아요를 눌러도 값이 덮어씌워지지 않아야 한다.")
+    void likePostSuccessByUsers() throws InterruptedException {
+        long savedPostId = initService.initPost();
+
+        int numberOfThreads = 10;
+        CountDownLatch countDownLatch = new CountDownLatch(numberOfThreads);
+        ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
+
+        for (int i = 1; i <= numberOfThreads; i++) {
+            String email = "user" + i + "@naver.com";
+            executorService.execute(() -> {
+                postService.likePost(savedPostId, email);
+                countDownLatch.countDown();
+            });
+        }
+        countDownLatch.await();
+
+        Post savedPost = postRepository.findById(savedPostId).get();
+        Assertions.assertThat(savedPost.getLikes().size()).isEqualTo(10);
+        Assertions.assertThat(savedPost.getLikeCount()).isEqualTo(10);
     }
 
     @RequiredArgsConstructor

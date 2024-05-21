@@ -1,16 +1,25 @@
 package funfit.community.post.repository;
 
 import funfit.community.post.entity.Post;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.util.Optional;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from Post p " +
-            "left join Like l on l.post.id = p.id " +
-            "group by p " +
-            "order by count(l) desc")
-    Slice<Post> findOrderByLikeCount(Pageable pageable);
+            "left join fetch p.bookmarks " +
+            "where p.id = :postId")
+    Optional<Post> findByIdWithBookmarkWithLock(@Param("postId") long postId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select p from Post p " +
+            "left join fetch p.likes " +
+            "where p.id = :postId")
+    Optional<Post> findByIdWithLikeWithLock(@Param("postId") long postId);
 }

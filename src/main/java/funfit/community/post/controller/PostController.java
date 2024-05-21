@@ -4,7 +4,6 @@ import funfit.community.post.dto.CreatePostRequest;
 import funfit.community.post.dto.ReadBestPostsResponse;
 import funfit.community.post.dto.ReadPostInListResponse;
 import funfit.community.post.dto.ReadPostResponse;
-import funfit.community.post.entity.Post;
 import funfit.community.post.service.PostService;
 import funfit.community.dto.SuccessResponse;
 import funfit.community.query.PostQueryService;
@@ -18,8 +17,6 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor

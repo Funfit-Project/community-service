@@ -12,6 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Slf4j
 @Service
 @Transactional
@@ -41,24 +43,30 @@ public class PostService {
     }
 
     public void bookmark(long postId, String email) {
-        Post post = postRepository.findById(postId)
+        Post post = postRepository.findByIdWithBookmarkWithLock(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
 
-        bookmarkRepository.findByPostAndBookmarkUserEmail(post, email)
-                .ifPresentOrElse(bookmark -> {
-                    bookmark.deleteFromPost();
-                    bookmarkRepository.delete(bookmark);
-                }, () -> post.addBookmark(Bookmark.create(email)));
+        Optional<Bookmark> alreadyBookmark = post.getBookmarks().stream()
+                .filter(bookmark -> bookmark.getBookmarkUserEmail().equals(email))
+                .findAny();
+
+        alreadyBookmark.ifPresentOrElse(bookmark -> {
+            post.deleteBookmark(bookmark);
+            bookmarkRepository.delete(bookmark);
+        }, () -> post.addBookmark(Bookmark.create(email)));
     }
 
     public void likePost(long postId, String email) {
-        Post post = postRepository.findById(postId)
+        Post post = postRepository.findByIdWithLikeWithLock(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
 
-        likeRepository.findByPostAndLikeUserEmail(post, email)
-                .ifPresentOrElse(like -> {
-                    like.deleteFromPost();
-                    likeRepository.delete(like);
-                }, () -> post.addLike(Like.create(email)));
+        Optional<Like> alreadyLike = post.getLikes().stream()
+                .filter(like -> like.getLikeUserEmail().equals(email))
+                .findAny();
+
+        alreadyLike.ifPresentOrElse(like -> {
+            post.deleteLike(like);
+            likeRepository.delete(like);
+        }, () -> post.addLike(Like.create(email)));
     }
 }

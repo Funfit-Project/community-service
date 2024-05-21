@@ -81,11 +81,21 @@ public class Post extends BaseEntity {
         this.likeCount++;
     }
 
+    public void deleteLike(Like like) {
+        this.likes.remove(like);
+        likeCount--;
+    }
+
     // 연관관계 편의 메서드
     public void addBookmark(Bookmark bookmark) {
         this.getBookmarks().add(bookmark);
         bookmark.setPost(this);
         this.bookmarkCount++;
+    }
+
+    public void deleteBookmark(Bookmark bookmark) {
+        this.bookmarks.remove(bookmark);
+        bookmarkCount--;
     }
 
     public void updateContent(String newContent) {
