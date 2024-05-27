@@ -1,5 +1,9 @@
 package funfit.community.rabbitMq.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import funfit.community.exception.customException.RabbitMqException;
+import funfit.community.rabbitMq.dto.ErrorResponse;
+import funfit.community.rabbitMq.dto.MqResult;
 import funfit.community.rabbitMq.dto.RequestUserByEmail;
 import funfit.community.rabbitMq.dto.User;
 import lombok.RequiredArgsConstructor;
@@ -10,8 +14,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.LinkedHashMap;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -19,26 +21,22 @@ public class RabbitMqService {
 
     private final RabbitTemplate rabbitTemplate;
     private final RedisTemplate<String, User> redisTemplate;
+    private final ObjectMapper objectMapper;
 
     public User requestUserByEmail(RequestUserByEmail dto) {
-        Object message = rabbitTemplate.convertSendAndReceive("request_user_by_email", dto);
-        log.info("response message = {}", message.toString());
+        MqResult response = objectMapper.convertValue(rabbitTemplate.convertSendAndReceive("request_user_by_email", dto), MqResult.class);
 
-        User user = convertMessageToUserDto(message);
-        redisTemplate.opsForValue().set(user.getEmail(), user);
-        log.info("Redis | 사용자 정보 캐시 저장 완료");
-        return user;
-    }
+        log.info("response mqResult = {}", response.toString());
 
-    private User convertMessageToUserDto(Object response) {
-        LinkedHashMap map = (LinkedHashMap) response;
-        User dto = new User();
-
-        dto.setUserId((Integer)map.get("userId"));
-        dto.setEmail((String)map.get("email"));
-        dto.setUserName((String)map.get("userName"));
-        dto.setRoleName((String)map.get("roleName"));
-        return dto;
+        if (response.isSuccess()) {
+            User user = objectMapper.convertValue(response.getResult(), User.class);
+            redisTemplate.opsForValue().set(user.getEmail(), user);
+            log.info("Redis | 사용자 정보 캐시 저장 완료");
+            return user;
+        } else {
+            ErrorResponse errorResponse = (ErrorResponse) response.getResult();
+            throw new RabbitMqException(errorResponse.getMessage());
+        }
     }
 
     @RabbitListener(queues = "edited_user_id_for_community")

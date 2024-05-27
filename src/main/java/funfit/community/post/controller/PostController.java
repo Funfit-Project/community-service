@@ -14,9 +14,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
 
 @RestController
 @RequiredArgsConstructor
@@ -59,8 +62,9 @@ public class PostController {
     }
 
     @GetMapping("/community/posts/best")
-    public ResponseEntity readBestPosts() {
-        ReadBestPostsResponse readBestPostsResponse = postQueryService.readBestPosts();
+    public ResponseEntity readBestPosts(@RequestParam("time") @DateTimeFormat(pattern = "yyyy-MM-dd HH") LocalDateTime time) {
+        System.out.println("time = " + time);
+        ReadBestPostsResponse readBestPostsResponse = postQueryService.readBestPosts(time);
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new SuccessResponse("실시간 인기글 조회 성공", readBestPostsResponse));
     }

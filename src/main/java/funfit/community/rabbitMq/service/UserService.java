@@ -1,5 +1,6 @@
 package funfit.community.rabbitMq.service;
 
+import funfit.community.rabbitMq.dto.MicroServiceName;
 import funfit.community.rabbitMq.dto.RequestUserByEmail;
 import funfit.community.rabbitMq.dto.User;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,6 @@ public class UserService {
         if (user != null) {
             return user;
         }
-        return rabbitMqService.requestUserByEmail(new RequestUserByEmail(email, "community"));
+        return rabbitMqService.requestUserByEmail(new RequestUserByEmail(email, MicroServiceName.COMMUNITY));
     }
 }

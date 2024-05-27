@@ -16,6 +16,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -49,7 +50,7 @@ public class PostQueryService {
                 });
     }
 
-    public ReadBestPostsResponse readBestPosts() {
-        return bestPostCacheService.readBestPosts();
+    public ReadBestPostsResponse readBestPosts(LocalDateTime time) {
+        return bestPostCacheService.readBestPosts(time);
     }
 }

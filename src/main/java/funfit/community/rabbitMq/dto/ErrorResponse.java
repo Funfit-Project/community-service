@@ -4,11 +4,10 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Getter
-@NoArgsConstructor
 @AllArgsConstructor
-public class RequestUserByEmail {
+@NoArgsConstructor
+@Getter
+public class ErrorResponse {
 
-    private String email;
-    private MicroServiceName serviceName;
+    private String message;
 }

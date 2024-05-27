@@ -32,7 +32,7 @@ public class BestPostCacheService {
     private final PostRepository postRepository;
     private String currentTime;
     private String previousTime;
-    private static final String BEST_POSTS = "best_posts";
+    private static final String BEST_POSTS_PREFIX = "best_posts_";
 
     @PostConstruct
     public void initTime() {
@@ -44,8 +44,8 @@ public class BestPostCacheService {
         stringRedisTemplate.opsForZSet().incrementScore(currentTime, String.valueOf(postId), 1);
     }
 
-    public ReadBestPostsResponse readBestPosts() {
-        return readBestPostsResponseRedisTemplate.opsForValue().get(BEST_POSTS);
+    public ReadBestPostsResponse readBestPosts(LocalDateTime time) {
+        return readBestPostsResponseRedisTemplate.opsForValue().get(BEST_POSTS_PREFIX + time);
     }
 
     @Scheduled(cron = "0 0 * * * *") // 매 시간 정각마다 실행
@@ -54,12 +54,8 @@ public class BestPostCacheService {
 
         ReadBestPostsResponse readBestPostsResponse = generateBestPostsDto();
 
-        if (readBestPostsResponseRedisTemplate.hasKey(BEST_POSTS)) {
-            readBestPostsResponseRedisTemplate.delete(BEST_POSTS);
-        }
-
         // 인기글 dto를 레디스에 저장
-        readBestPostsResponseRedisTemplate.opsForValue().set(BEST_POSTS, readBestPostsResponse);
+        readBestPostsResponseRedisTemplate.opsForValue().set(BEST_POSTS_PREFIX + previousTime, readBestPostsResponse);
     }
 
     private ReadBestPostsResponse generateBestPostsDto() {
@@ -84,6 +80,6 @@ public class BestPostCacheService {
     private void updateTime() {
         previousTime = currentTime;
         LocalDateTime now = LocalDateTime.now();
-        currentTime = LocalDateTime.of(now.getYear(), now.getMonth(), now.getDayOfMonth(), now.getHour(), now.getMinute(), now.getSecond()).toString();
+        currentTime = LocalDateTime.of(now.getYear(), now.getMonth(), now.getDayOfMonth(), now.getHour(), 0, 0).toString();
     }
 }
