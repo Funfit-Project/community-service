@@ -39,6 +39,20 @@ public class RabbitMqService {
         }
     }
 
+    // 레디스 장애시
+    public User requestUserByEmailWithoutRedis(RequestUserByEmail dto) {
+        MqResult response = objectMapper.convertValue(rabbitTemplate.convertSendAndReceive("request_user_by_email", dto), MqResult.class);
+
+        log.info("response mqResult = {}", response.toString());
+
+        if (response.isSuccess()) {
+            return objectMapper.convertValue(response.getResult(), User.class);
+        } else {
+            ErrorResponse errorResponse = (ErrorResponse) response.getResult();
+            throw new RabbitMqException(errorResponse.getMessage());
+        }
+    }
+
     @RabbitListener(queues = "edited_user_id_for_community")
     public void onMessageInEditedUserIdForCommunity(long userId) {
         log.info("RabbitMQ | on message in edited_user_id_for_community queue, message = {}", userId);

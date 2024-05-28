@@ -39,6 +39,11 @@ dependencies {
 
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.2'
 
+	implementation "io.github.resilience4j:resilience4j-spring-boot3:2.2.0"
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-aop'
+
+
 	testAnnotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.projectlombok:lombok'
 
@@ -50,5 +55,10 @@ tasks.named('test') {
 }
 
 jar {
+	enabled = false
+}
+
+// 테스트 코드를 제외한 빌드 수행
+tasks.withType(Test) {
 	enabled = false
 }

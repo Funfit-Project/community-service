@@ -1,0 +1,43 @@
+services:
+  springboot:
+    build: .
+    image: community
+    container_name: community
+    ports:
+      - "8082:8082"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  mysql:
+    image: mysql
+    container_name: mysql_community
+    environment:
+      MYSQL_ROOT_PASSWORD: thgml0108^^*!
+      MYSQL_DATABASE: community
+      MYSQL_PASSWORD: thgml0108^^*!
+    ports:
+      - "3308:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis
+    container_name: redis_community
+    ports:
+      - "6381:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  default:
+    external:
+      name: funfit
