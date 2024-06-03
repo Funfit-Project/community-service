@@ -23,9 +23,9 @@ public class RedisConfig {
 
         RedisSentinelConfiguration sentinelConfiguration = new RedisSentinelConfiguration()
                 .master("mymaster")
-                .sentinel("redis-sentinel-1", 26379)
-                .sentinel("redis-sentinel-2", 26380)
-                .sentinel("redis-sentinel-3", 26381);
+                .sentinel("community_redis_sentinel_1", 26379)
+                .sentinel("community_redis_sentinel_2", 26379)
+                .sentinel("community_redis_sentinel_3", 26379);
         sentinelConfiguration.setPassword("1234");
 
         LettuceConnectionFactory connectionFactory = new LettuceConnectionFactory(sentinelConfiguration);
