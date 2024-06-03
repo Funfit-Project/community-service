@@ -8,8 +8,8 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-      redis:
-        condition: service_healthy
+    networks:
+      - funfit
 
   mysql:
     image: mysql
@@ -25,19 +25,89 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - funfit
 
-  redis:
-    image: redis
-    container_name: redis_community
+  redis-master:
+    image: bitnami/redis
+    container_name: redis-master
+    hostname: redis-master
+    environment:
+      - REDIS_REPLICATION_MODE=master
+      - REDIS_PASSWORD=1234 # 해당 레디스 서버 접속을 위한 비밀번호
+      - REDIS_MASTER_PASSWORD=1234 # 마스터 서버 접속을 위한 비밀번호
     ports:
-      - "6381:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - "6379:6379"
+    networks:
+      - funfit
+
+  redis-slave:
+    image: bitnami/redis
+    container_name: redis-slave
+    hostname: redis-slave
+    environment:
+      - REDIS_REPLICATION_MODE=slave
+      - REDIS_MASTER_HOST=redis-master
+      - REDIS_PASSWORD=1234
+      - REDIS_MASTER_PASSWORD=1234
+    ports:
+      - "6380:6379"
+    depends_on:
+      - redis-master
+    networks:
+      - funfit
+
+  redis-sentinel-1:
+    image: bitnami/redis-sentinel
+    container_name: redis-sentinel-1
+    environment:
+      - REDIS_MASTER_HOST=redis-master
+      - REDIS_MASTER_PORT_NUMBER=6379
+      - REDIS_MASTER_SET=mymaster
+      - REDIS_MASTER_PASSWORD=1234
+      - REDIS_SENTINEL_QUORUM=2
+    depends_on:
+      - redis-master
+      - redis-slave
+    ports:
+      - "26379:26379"
+    networks:
+      - funfit
+
+  redis-sentinel-2:
+    image: bitnami/redis-sentinel
+    container_name: redis-sentinel-2
+    environment:
+      - REDIS_MASTER_HOST=redis-master
+      - REDIS_MASTER_PORT_NUMBER=6379
+      - REDIS_MASTER_SET=mymaster
+      - REDIS_MASTER_PASSWORD=1234
+      - REDIS_SENTINEL_QUORUM=2
+    depends_on:
+      - redis-master
+      - redis-slave
+    ports:
+      - "26380:26379"
+    networks:
+      - funfit
+
+  redis-sentinel-3:
+    image: bitnami/redis-sentinel
+    container_name: redis-sentinel-3
+    environment:
+      - REDIS_MASTER_HOST=redis-master
+      - REDIS_MASTER_PORT_NUMBER=6379
+      - REDIS_MASTER_SET=mymaster
+      - REDIS_MASTER_PASSWORD=1234
+      - REDIS_SENTINEL_QUORUM=2
+    depends_on:
+      - redis-master
+      - redis-slave
+    ports:
+      - "26381:26379"
+    networks:
+      - funfit
 
 networks:
-  default:
-    external:
-      name: funfit
+  funfit:
+    external: true

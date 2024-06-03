@@ -15,17 +15,24 @@ spring:
     port: 5672
     username: guest
     password: guest
-  data:
-    redis:
-      host: redis_community
-      port: 6379
-      timeout: 3000
+
 logging:
   level:
     org:
       hibernate.SQL: debug
 jwt:
   secret: ${JWT_SECRET}
+
+resilience4j.circuitbreaker:
+  configs:
+    default:
+      slidingWindowSize: 10
+      failureRateThreshold: 50
+      waitDurationInOpenState: 10000
+  instances:
+    redis:
+      baseConfig: default
+
 springdoc:
   packages-to-scan: funfit.community
   default-consumes-media-type: application/json;charset=UTF-8
