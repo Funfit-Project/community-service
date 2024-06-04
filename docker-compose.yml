@@ -28,6 +28,19 @@ services:
     networks:
       - funfit
 
+  mongo:
+    image: mongo
+    container_name: mongo
+    hostname: mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+      MONGO_INITDB_DATABASE: funfit
+    networks:
+      - funfit
+
   redis-master:
     image: bitnami/redis
     container_name: community_redis_1
