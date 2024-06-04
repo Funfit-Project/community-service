@@ -4,7 +4,9 @@ import funfit.community.exception.ErrorCode;
 import funfit.community.exception.customException.BusinessException;
 import funfit.community.post.dto.ReadBestPostsResponse;
 import funfit.community.post.dto.ReadPostInListResponse;
+import funfit.community.post.entity.BestPosts;
 import funfit.community.post.entity.Post;
+import funfit.community.post.repository.BestPostsRepository;
 import funfit.community.post.repository.PostRepository;
 import funfit.community.rabbitMq.dto.User;
 import funfit.community.rabbitMq.service.UserService;
@@ -30,6 +32,7 @@ public class BestPostCacheService {
     private final RedisTemplate<String, String> stringRedisTemplate;
     private final RedisTemplate<String, ReadBestPostsResponse> readBestPostsResponseRedisTemplate;
     private final PostRepository postRepository;
+    private final BestPostsRepository bestPostsRepository;
     private String currentTime;
     private String previousTime;
     private static final String BEST_POSTS_PREFIX = "best_posts_";
@@ -51,14 +54,8 @@ public class BestPostCacheService {
     @Scheduled(cron = "0 0 * * * *") // 매 시간 정각마다 실행
     public void saveBestPostsDtoInRedis() {
         updateTime();
+        log.info("update time: {} -> {}", previousTime, currentTime);
 
-        ReadBestPostsResponse readBestPostsResponse = generateBestPostsDto();
-
-        // 인기글 dto를 레디스에 저장
-        readBestPostsResponseRedisTemplate.opsForValue().set(BEST_POSTS_PREFIX + previousTime, readBestPostsResponse);
-    }
-
-    private ReadBestPostsResponse generateBestPostsDto() {
         // previousTime 변수에 해당하는 key에 저장된 게시글 id들 중 조회수가 높은 10개의 id를 조회 및 삭제
         Set<String> postIds = stringRedisTemplate.opsForZSet().reverseRange(previousTime, 0, 9);
         stringRedisTemplate.delete(previousTime);
@@ -67,14 +64,20 @@ public class BestPostCacheService {
         List<ReadPostInListResponse> bestPostDtos = postIds.stream()
                 .map(postId -> {
                     Post post = postRepository.findById(Long.valueOf(postId))
-                        .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+                            .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
                     User postUser = userService.getUserDto(post.getWriterEmail());
                     return new ReadPostInListResponse(post.getTitle(), postUser.getUserName(), post.getCategory().getName(),
-                            post.getCreatedAt(), post.getUpdatedAt(),
+                            post.getCreatedAt().toString(), post.getUpdatedAt().toString(),
                             post.getComments().size(), post.getLikes().size(), post.getBookmarks().size(), post.getViews());
                 })
                 .toList();
-        return new ReadBestPostsResponse(previousTime, 10, bestPostDtos);
+
+        // 레디스에 인기글 저장
+        ReadBestPostsResponse readBestPostsResponse =  new ReadBestPostsResponse(previousTime, bestPostDtos.size(), bestPostDtos);
+        readBestPostsResponseRedisTemplate.opsForValue().set(BEST_POSTS_PREFIX + previousTime, readBestPostsResponse);
+
+        // mongodb에 인기글 저장
+        bestPostsRepository.save(readBestPostsResponse);
     }
 
     private void updateTime() {

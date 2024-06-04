@@ -17,8 +17,8 @@ public class ReadPostInListResponse implements Serializable {
     private String title;
     private String userName;
     private String category;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private String createdAt;
+    private String updatedAt;
     private int commentCount;
     private int likeCount;
     private int bookmarkCount;
