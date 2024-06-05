@@ -2,7 +2,7 @@ package funfit.community.post.service;
 
 import funfit.community.exception.ErrorCode;
 import funfit.community.exception.customException.BusinessException;
-import funfit.community.post.dto.ReadBestPostsResponse;
+import funfit.community.post.dto.BestPostsResponse;
 import funfit.community.post.dto.ReadPostInListResponse;
 import funfit.community.post.entity.BestPosts;
 import funfit.community.post.entity.Post;
@@ -10,6 +10,7 @@ import funfit.community.post.repository.BestPostsRepository;
 import funfit.community.post.repository.PostRepository;
 import funfit.community.rabbitMq.dto.User;
 import funfit.community.rabbitMq.service.UserService;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +31,7 @@ public class BestPostCacheService {
 
     private final UserService userService;
     private final RedisTemplate<String, String> stringRedisTemplate;
-    private final RedisTemplate<String, ReadBestPostsResponse> readBestPostsResponseRedisTemplate;
+    private final RedisTemplate<String, BestPosts> bestPostsRedisTemplate;
     private final PostRepository postRepository;
     private final BestPostsRepository bestPostsRepository;
     private String currentTime;
@@ -47,10 +48,21 @@ public class BestPostCacheService {
         stringRedisTemplate.opsForZSet().incrementScore(currentTime, String.valueOf(postId), 1);
     }
 
-    public ReadBestPostsResponse readBestPosts(LocalDateTime time) {
-        return readBestPostsResponseRedisTemplate.opsForValue().get(BEST_POSTS_PREFIX + time);
+    @CircuitBreaker(name = "redis", fallbackMethod = "fallback")
+    public BestPostsResponse readBestPosts(LocalDateTime time) {
+        BestPosts bestPosts = bestPostsRedisTemplate.opsForValue().get(BEST_POSTS_PREFIX + time);
+        return new BestPostsResponse(bestPosts.getTime(), bestPosts.getCount(), bestPosts.getBestPostDtos());
     }
 
+    private BestPostsResponse fallback(LocalDateTime time, Throwable e) {
+        log.error("레디스 장애로 인한 fallback 메소드 호출, {}", e.getMessage());
+        // mongodb에서 조회
+        BestPosts bestPosts = bestPostsRepository.findByTime(time.toString())
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_BEST_POSTS_TIME));
+        return new BestPostsResponse(bestPosts.getTime(), bestPosts.getCount(), bestPosts.getBestPostDtos());
+    }
+
+//    @Scheduled(cron = "0 */2 * * * *")
     @Scheduled(cron = "0 0 * * * *") // 매 시간 정각마다 실행
     public void saveBestPostsDtoInRedis() {
         updateTime();
@@ -73,11 +85,11 @@ public class BestPostCacheService {
                 .toList();
 
         // 레디스에 인기글 저장
-        ReadBestPostsResponse readBestPostsResponse =  new ReadBestPostsResponse(previousTime, bestPostDtos.size(), bestPostDtos);
-        readBestPostsResponseRedisTemplate.opsForValue().set(BEST_POSTS_PREFIX + previousTime, readBestPostsResponse);
+        BestPosts bestPosts = new BestPosts(previousTime, bestPostDtos);
+        bestPostsRedisTemplate.opsForValue().set(BEST_POSTS_PREFIX + previousTime, bestPosts);
 
         // mongodb에 인기글 저장
-        bestPostsRepository.save(readBestPostsResponse);
+        bestPostsRepository.save(bestPosts);
     }
 
     private void updateTime() {

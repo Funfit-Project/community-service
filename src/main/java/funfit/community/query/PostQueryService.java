@@ -2,9 +2,10 @@ package funfit.community.query;
 
 import funfit.community.exception.ErrorCode;
 import funfit.community.exception.customException.BusinessException;
-import funfit.community.post.dto.ReadBestPostsResponse;
+import funfit.community.post.dto.BestPostsResponse;
 import funfit.community.post.dto.ReadPostInListResponse;
 import funfit.community.post.dto.ReadPostResponse;
+import funfit.community.post.entity.BestPosts;
 import funfit.community.post.entity.Post;
 import funfit.community.post.repository.PostRepository;
 import funfit.community.post.service.BestPostCacheService;
@@ -50,7 +51,7 @@ public class PostQueryService {
                 });
     }
 
-    public ReadBestPostsResponse readBestPosts(LocalDateTime time) {
+    public BestPostsResponse readBestPosts(LocalDateTime time) {
         return bestPostCacheService.readBestPosts(time);
     }
 }

@@ -1,6 +1,6 @@
 package funfit.community.config;
 
-import funfit.community.post.dto.ReadBestPostsResponse;
+import funfit.community.post.entity.BestPosts;
 import funfit.community.rabbitMq.dto.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.EnableCaching;
@@ -33,26 +33,26 @@ public class RedisConfig {
         return connectionFactory;
     }
 
+//    @Bean
+//    public RedisTemplate<String, String> stringRedisTemplate() {
+//        RedisTemplate<String, String> redisTemplate = new RedisTemplate<>();
+//        redisTemplate.setConnectionFactory(redisConnectionFactory());
+//        redisTemplate.setKeySerializer(new StringRedisSerializer());
+//        redisTemplate.setValueSerializer(new StringRedisSerializer());
+//        return redisTemplate;
+//    }
+
     @Bean
-    public RedisTemplate<String, String> StringRedisTemplate() {
-        RedisTemplate<String, String> redisTemplate = new RedisTemplate<>();
+    public RedisTemplate<String, BestPosts> bestPostsRedisTemplate() {
+        RedisTemplate<String, BestPosts> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory());
         redisTemplate.setKeySerializer(new StringRedisSerializer());
-        redisTemplate.setValueSerializer(new StringRedisSerializer());
+        redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(BestPosts.class));
         return redisTemplate;
     }
 
     @Bean
-    public RedisTemplate<String, ReadBestPostsResponse> ReadPostListResponseRedisTemplate() {
-        RedisTemplate<String, ReadBestPostsResponse> redisTemplate = new RedisTemplate<>();
-        redisTemplate.setConnectionFactory(redisConnectionFactory());
-        redisTemplate.setKeySerializer(new StringRedisSerializer());
-        redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(ReadBestPostsResponse.class));
-        return redisTemplate;
-    }
-
-    @Bean
-    public RedisTemplate<String, User> UserDtoRedisTemplate() {
+    public RedisTemplate<String, User> userDtoRedisTemplate() {
         RedisTemplate<String, User> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory());
         redisTemplate.setKeySerializer(new StringRedisSerializer());

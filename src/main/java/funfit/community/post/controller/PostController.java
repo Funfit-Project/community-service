@@ -1,7 +1,7 @@
 package funfit.community.post.controller;
 
+import funfit.community.post.dto.BestPostsResponse;
 import funfit.community.post.dto.CreatePostRequest;
-import funfit.community.post.dto.ReadBestPostsResponse;
 import funfit.community.post.dto.ReadPostInListResponse;
 import funfit.community.post.dto.ReadPostResponse;
 import funfit.community.post.service.PostService;
@@ -64,9 +64,9 @@ public class PostController {
     @GetMapping("/community/posts/best")
     public ResponseEntity readBestPosts(@RequestParam("time") @DateTimeFormat(pattern = "yyyy-MM-dd HH") LocalDateTime time) {
         System.out.println("time = " + time);
-        ReadBestPostsResponse readBestPostsResponse = postQueryService.readBestPosts(time);
+        BestPostsResponse bestPostsResponse = postQueryService.readBestPosts(time);
         return ResponseEntity.status(HttpStatus.OK)
-                .body(new SuccessResponse("실시간 인기글 조회 성공", readBestPostsResponse));
+                .body(new SuccessResponse("실시간 인기글 조회 성공", bestPostsResponse));
     }
 
     @PostMapping("/community/posts/{postId}/like")

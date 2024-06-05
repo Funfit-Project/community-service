@@ -19,8 +19,7 @@ public class UserService {
 
     @CircuitBreaker(name = "redis", fallbackMethod = "fallback")
     public User getUserDto(String email) {
-        log.info("getUserDto 메소드 실행");
-        User user = redisTemplate.opsForValue().get(email); // 레디스에서 조회
+        User user = redisTemplate.opsForValue().get(email); // 레디스에서 사용자명 조회
         if (user != null) {
             return user;
         }
@@ -29,6 +28,6 @@ public class UserService {
 
     private User fallback(String email, Throwable e) {
         log.error("레디스 장애로 인한 fallback 메소드 호출, {}", e.getMessage());
-        return rabbitMqService.requestUserByEmailWithoutRedis(new RequestUserByEmail(email, MicroServiceName.COMMUNITY));
+        return rabbitMqService.requestUserByEmailWithoutRedis(new RequestUserByEmail(email, MicroServiceName.COMMUNITY)); // RabbitMQ를 통해 사용자명 받아옴
     }
 }

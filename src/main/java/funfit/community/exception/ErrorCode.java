@@ -36,7 +36,9 @@ public enum ErrorCode {
     REQUIRED_JWT(HttpStatus.BAD_REQUEST, "토큰은 필수입니다."),
 
     // unauthorized
-    ONLY_TRAINER(HttpStatus.UNAUTHORIZED, "트레이너만 접근 가능합니다.")
+    ONLY_TRAINER(HttpStatus.UNAUTHORIZED, "트레이너만 접근 가능합니다."),
+
+    INVALID_BEST_POSTS_TIME(HttpStatus.BAD_REQUEST, "인기글 시간은 한시간 단위입니다."),
     ;
 
     private final HttpStatus httpStatus;
