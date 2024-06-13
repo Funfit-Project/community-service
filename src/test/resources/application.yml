@@ -10,6 +10,18 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
         format_sql: true
+#spring:
+#  datasource:
+#    url: jdbc:mysql://localhost:3306/funfit_community?useSSL=false&allowPublicKeyRetrieval=true
+#    username: root
+#    password: thgml0108^^*!
+#  jpa:
+#    hibernate:
+#      ddl-auto: create
+#    properties:
+#      hibernate:
+#        dialect: org.hibernate.dialect.MySQLDialect
+#        format_sql: true
   rabbitmq:
     host: localhost
     port: 5672
@@ -17,11 +29,23 @@ spring:
     password: guest
   data:
     redis:
-      host: localhost
+      host: 127.0.0.1
       port: 6379
 logging:
   level:
     org:
-      hibernate.SQL: debug
+      springframework:
+#        transaction:
+#          interceptor: TRACE
+#          jdbc:
+#            datasource:
+#              DataSourceTransactionManager: DEBUG
+#        orm:
+#          jpa:
+#            JpaTransactionManager: DEBUG
+      hibernate:
+#        resource:
+#          transaction: DEBUG
+        SQL: DEBUG
 jwt:
   secret: ${JWT_SECRET}

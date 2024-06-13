@@ -50,13 +50,14 @@ public class BestPostCacheService {
 
     @CircuitBreaker(name = "redis", fallbackMethod = "fallback")
     public BestPostsResponse readBestPosts(LocalDateTime time) {
+        // 레디스에서 인기글 조회
         BestPosts bestPosts = bestPostsRedisTemplate.opsForValue().get(BEST_POSTS_PREFIX + time);
         return new BestPostsResponse(bestPosts.getTime(), bestPosts.getCount(), bestPosts.getBestPostDtos());
     }
 
     private BestPostsResponse fallback(LocalDateTime time, Throwable e) {
         log.error("레디스 장애로 인한 fallback 메소드 호출, {}", e.getMessage());
-        // mongodb에서 조회
+        // mongodb에서 인기글 조회
         BestPosts bestPosts = bestPostsRepository.findByTime(time.toString())
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_BEST_POSTS_TIME));
         return new BestPostsResponse(bestPosts.getTime(), bestPosts.getCount(), bestPosts.getBestPostDtos());
