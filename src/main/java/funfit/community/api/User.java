@@ -1,4 +1,4 @@
-package funfit.community.rabbitMq.dto;
+package funfit.community.api;
 
 import lombok.*;
 

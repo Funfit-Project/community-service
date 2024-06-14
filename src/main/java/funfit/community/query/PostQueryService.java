@@ -5,12 +5,11 @@ import funfit.community.exception.customException.BusinessException;
 import funfit.community.post.dto.BestPostsResponse;
 import funfit.community.post.dto.ReadPostInListResponse;
 import funfit.community.post.dto.ReadPostResponse;
-import funfit.community.post.entity.BestPosts;
 import funfit.community.post.entity.Post;
 import funfit.community.post.repository.PostRepository;
 import funfit.community.post.service.BestPostCacheService;
-import funfit.community.rabbitMq.dto.User;
-import funfit.community.rabbitMq.service.UserService;
+import funfit.community.api.User;
+import funfit.community.api.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -18,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.List;
 
 @Service
