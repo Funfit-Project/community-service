@@ -16,17 +16,15 @@ public class UserService {
 
     @CircuitBreaker(name = "redis", fallbackMethod = "fallback")
     public User getUserDto(String email) {
-        // 레디스에서 사용자 정보 조회
         User user = redisTemplate.opsForValue().get(email);
         if (user != null) {
             return user;
         }
-        return authServiceClient.getUser(email);
+        return authServiceClient.getUserByEmail(email);
     }
 
     private User fallback(String email, Throwable e) {
         log.error("레디스 장애로 인한 fallback 메소드 호출, {}", e.getMessage());
-        // HTTP 통신을 통해 Auth 서비스에게 사용자 정보 요청
-        return authServiceClient.getUser(email);
+        return authServiceClient.getUserByEmail(email);
     }
 }

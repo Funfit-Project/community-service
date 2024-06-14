@@ -8,5 +8,5 @@ import org.springframework.web.bind.annotation.RequestParam;
 public interface AuthServiceClient {
 
     @GetMapping("/feignClient/user/community")
-    User getUser(@RequestParam String email);
+    User getUserByEmail(@RequestParam String email);
 }
