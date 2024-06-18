@@ -40,8 +40,8 @@ public class PostController {
 
     @GetMapping("/post/{postId}")
     public ResponseEntity readOne(@PathVariable long postId) {
-        postService.increaseViews(postId);
         ReadPostResponse readPostResponse = postQueryService.readPost(postId);
+        postService.increaseViews(postId);
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new SuccessResponse("게시글 조회 성공", readPostResponse));
     }

@@ -8,8 +8,7 @@ import funfit.community.post.entity.BestPosts;
 import funfit.community.post.entity.Post;
 import funfit.community.post.repository.BestPostsRepository;
 import funfit.community.post.repository.PostRepository;
-import funfit.community.api.User;
-import funfit.community.api.UserService;
+import funfit.community.api.UserDataProvider;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -25,11 +25,11 @@ import java.util.Set;
 
 @Slf4j
 @Service
-@Transactional
+@Transactional(propagation = Propagation.REQUIRES_NEW)
 @RequiredArgsConstructor
 public class BestPostCacheService {
 
-    private final UserService userService;
+    private final UserDataProvider userDataProvider;
     private final RedisTemplate<String, String> stringRedisTemplate;
     private final RedisTemplate<String, BestPosts> bestPostsRedisTemplate;
     private final PostRepository postRepository;
@@ -44,8 +44,13 @@ public class BestPostCacheService {
         this.previousTime = this.currentTime = LocalDateTime.of(now.getYear(), now.getMonth(), now.getDayOfMonth(), now.getHour(), 0, 0).toString();
     }
 
+    @CircuitBreaker(name = "redis", fallbackMethod = "fallback")
     public void reflectPostViewsInRedis(long postId) {
         stringRedisTemplate.opsForZSet().incrementScore(currentTime, String.valueOf(postId), 1);
+    }
+
+    public void fallback(long postId, Exception exception) {
+        log.info("레디스 장애로 인한 fallback 메소드 호출: {}", exception.getMessage());
     }
 
     @CircuitBreaker(name = "redis", fallbackMethod = "fallback")
@@ -78,8 +83,8 @@ public class BestPostCacheService {
                 .map(postId -> {
                     Post post = postRepository.findById(Long.valueOf(postId))
                             .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
-                    User postUser = userService.getUserDto(post.getWriterEmail());
-                    return new ReadPostInListResponse(post.getTitle(), postUser.getUserName(), post.getCategory().getName(),
+                    String postUserName = userDataProvider.getUserName(post.getWriterEmail());
+                    return new ReadPostInListResponse(post.getTitle(), postUserName, post.getCategory().getName(),
                             post.getCreatedAt().toString(), post.getUpdatedAt().toString(),
                             post.getComments().size(), post.getLikes().size(), post.getBookmarks().size(), post.getViews());
                 })

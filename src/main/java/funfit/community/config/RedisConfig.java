@@ -29,18 +29,9 @@ public class RedisConfig {
         sentinelConfiguration.setPassword("1234");
 
         LettuceConnectionFactory connectionFactory = new LettuceConnectionFactory(sentinelConfiguration);
-
+        connectionFactory.setTimeout(5000);
         return connectionFactory;
     }
-
-//    @Bean
-//    public RedisTemplate<String, String> stringRedisTemplate() {
-//        RedisTemplate<String, String> redisTemplate = new RedisTemplate<>();
-//        redisTemplate.setConnectionFactory(redisConnectionFactory());
-//        redisTemplate.setKeySerializer(new StringRedisSerializer());
-//        redisTemplate.setValueSerializer(new StringRedisSerializer());
-//        return redisTemplate;
-//    }
 
     @Bean
     public RedisTemplate<String, BestPosts> bestPostsRedisTemplate() {

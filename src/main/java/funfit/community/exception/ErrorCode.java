@@ -8,6 +8,9 @@ import org.springframework.http.HttpStatus;
 @RequiredArgsConstructor
 public enum ErrorCode {
 
+    // external service
+    UNAVAILABLE_AUTH_SERVICE(HttpStatus.SERVICE_UNAVAILABLE, "현재 auth 서비스는 사용 불가입니다."),
+
     NOT_FOUND(HttpStatus.NOT_FOUND, "요청하신 데이터를 찾을 수 없습니다."),
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "접근 권한이 없습니다."),
 

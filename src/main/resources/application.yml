@@ -12,8 +12,8 @@ spring:
   application:
     name: community-service
   datasource:
-    url: ${DATASOURCE_URL}
-    username: ${DATASOURCE_USERNAME}
+    url: jdbc:mysql://community_mysql:3306/community?useSSL=false&allowPublicKeyRetrieval=true
+    username: root
     password: ${DATASOURCE_PASSWORD}
   jpa:
     hibernate:
@@ -30,6 +30,20 @@ spring:
   data:
     mongodb:
       uri: mongodb://root:root@mongo:27017/funfit?authSource=admin
+  cloud:
+    openfeign:
+      circuitbreaker:
+        enabled: true
+
+resilience4j.circuitbreaker:
+  configs:
+    default:
+      slidingWindowSize: 4
+      failureRateThreshold: 50
+      waitDurationInOpenState: 10000
+  instances:
+    auth:
+      baseConfig: default
 
 logging:
   level:
@@ -37,16 +51,6 @@ logging:
       hibernate.SQL: debug
 jwt:
   secret: ${JWT_SECRET}
-
-resilience4j.circuitbreaker:
-  configs:
-    default:
-      slidingWindowSize: 10
-      failureRateThreshold: 50
-      waitDurationInOpenState: 10000
-  instances:
-    redis:
-      baseConfig: default
 
 springdoc:
   packages-to-scan: funfit.community
