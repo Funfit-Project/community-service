@@ -27,6 +27,7 @@ spring:
     port: 5672
     username: guest
     password: guest
+    exchange: funfit
   data:
     mongodb:
       uri: mongodb://root:root@mongo:27017/funfit?authSource=admin
