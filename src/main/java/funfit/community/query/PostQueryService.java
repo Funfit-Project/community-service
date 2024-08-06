@@ -45,7 +45,7 @@ public class PostQueryService {
                     String userName = userDataProvider.getUserName(post.getWriterEmail());
                     return new ReadPostInListResponse(post.getTitle(), userName, post.getCategory().getName(),
                             post.getCreatedAt().toString(), post.getUpdatedAt().toString(),
-                            post.getComments().size(), post.getLikes().size(), post.getBookmarks().size(), post.getViews());
+                            post.getCommentCount(), post.getLikeCount(), post.getBookmarkCount(), post.getViews());
                 });
     }
 
