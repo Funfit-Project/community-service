@@ -57,14 +57,14 @@ public class PostService {
     }
 
     public void likePost(long postId, String email) {
-        Post post = postRepository.findByIdWithLikeWithLock(postId)
+
+        // post 조회 (with Lock)
+        Post post = postRepository.findByIdWithLock(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
 
-        Optional<Like> alreadyLike = post.getLikes().stream()
-                .filter(like -> like.getLikeUserEmail().equals(email))
-                .findAny();
+        Optional<Like> optionalLike = likeRepository.findByLikeUserEmailAndPost(email, post);
 
-        alreadyLike.ifPresentOrElse(like -> {
+        optionalLike.ifPresentOrElse(like -> {
             post.deleteLike(like);
             likeRepository.delete(like);
         }, () -> post.addLike(Like.create(email)));

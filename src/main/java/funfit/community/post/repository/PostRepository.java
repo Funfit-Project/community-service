@@ -13,13 +13,12 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from Post p " +
-            "left join fetch p.bookmarks " +
             "where p.id = :postId")
-    Optional<Post> findByIdWithBookmarkWithLock(@Param("postId") long postId);
+    Optional<Post> findByIdWithLock(@Param("postId") long postId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from Post p " +
-            "left join fetch p.likes " +
+            "left join fetch p.bookmarks " +
             "where p.id = :postId")
-    Optional<Post> findByIdWithLikeWithLock(@Param("postId") long postId);
+    Optional<Post> findByIdWithBookmarkWithLock(@Param("postId") long postId);
 }
