@@ -6,7 +6,6 @@ import funfit.community.post.dto.BestPostsResponse;
 import funfit.community.post.dto.ReadPostInListResponse;
 import funfit.community.post.entity.BestPosts;
 import funfit.community.post.entity.Post;
-import funfit.community.post.repository.BestPostsRepository;
 import funfit.community.post.repository.PostRepository;
 import funfit.community.api.UserDataProvider;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
@@ -14,6 +13,8 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -33,7 +34,6 @@ public class BestPostCacheService {
     private final RedisTemplate<String, String> stringRedisTemplate;
     private final RedisTemplate<String, BestPosts> bestPostsRedisTemplate;
     private final PostRepository postRepository;
-    private final BestPostsRepository bestPostsRepository;
     private String currentTime;
     private String previousTime;
     private static final String BEST_POSTS_PREFIX = "best_posts_";
@@ -53,24 +53,17 @@ public class BestPostCacheService {
         log.info("레디스 장애로 인한 fallback 메소드 호출: {}", exception.getMessage());
     }
 
-    @CircuitBreaker(name = "redis", fallbackMethod = "fallback")
     public BestPostsResponse readBestPosts(LocalDateTime time) {
         // 레디스에서 인기글 조회
         BestPosts bestPosts = bestPostsRedisTemplate.opsForValue().get(BEST_POSTS_PREFIX + time);
         return new BestPostsResponse(bestPosts.getTime(), bestPosts.getCount(), bestPosts.getBestPostDtos());
     }
 
-    private BestPostsResponse fallback(LocalDateTime time, Throwable e) {
-        log.error("레디스 장애로 인한 fallback 메소드 호출, {}", e.getMessage());
-        // mongodb에서 인기글 조회
-        BestPosts bestPosts = bestPostsRepository.findByTime(time.toString())
-                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_BEST_POSTS_TIME));
-        return new BestPostsResponse(bestPosts.getTime(), bestPosts.getCount(), bestPosts.getBestPostDtos());
-    }
-
-//    @Scheduled(cron = "0 */2 * * * *")
+//    @Scheduled(cron = "0 * * * * *") // 1분마다 실행
     @Scheduled(cron = "0 0 * * * *") // 매 시간 정각마다 실행
+    @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 1.5, maxDelay = 5000))
     public void saveBestPostsDtoInRedis() {
+        log.info("스케줄링 작업 수행: 인기글 추출 작업");
         updateTime();
         log.info("update time: {} -> {}", previousTime, currentTime);
 
@@ -93,9 +86,6 @@ public class BestPostCacheService {
         // 레디스에 인기글 저장
         BestPosts bestPosts = new BestPosts(previousTime, bestPostDtos);
         bestPostsRedisTemplate.opsForValue().set(BEST_POSTS_PREFIX + previousTime, bestPosts);
-
-        // mongodb에 인기글 저장
-        bestPostsRepository.save(bestPosts);
     }
 
     private void updateTime() {
