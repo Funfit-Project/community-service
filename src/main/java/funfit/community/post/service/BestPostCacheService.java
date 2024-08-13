@@ -4,11 +4,9 @@ import funfit.community.exception.ErrorCode;
 import funfit.community.exception.customException.BusinessException;
 import funfit.community.post.dto.BestPostsResponse;
 import funfit.community.post.dto.ReadPostInListResponse;
-import funfit.community.post.entity.BestPosts;
 import funfit.community.post.entity.Post;
 import funfit.community.post.repository.PostRepository;
 import funfit.community.api.UserDataProvider;
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +30,7 @@ public class BestPostCacheService {
 
     private final UserDataProvider userDataProvider;
     private final RedisTemplate<String, String> stringRedisTemplate;
-    private final RedisTemplate<String, BestPosts> bestPostsRedisTemplate;
+    private final RedisTemplate<String, BestPostsResponse> bestPostsRedisTemplate;
     private final PostRepository postRepository;
     private String currentTime;
     private String previousTime;
@@ -44,19 +42,12 @@ public class BestPostCacheService {
         this.previousTime = this.currentTime = LocalDateTime.of(now.getYear(), now.getMonth(), now.getDayOfMonth(), now.getHour(), 0, 0).toString();
     }
 
-    @CircuitBreaker(name = "redis", fallbackMethod = "fallback")
     public void reflectPostViewsInRedis(long postId) {
         stringRedisTemplate.opsForZSet().incrementScore(currentTime, String.valueOf(postId), 1);
     }
 
-    public void fallback(long postId, Exception exception) {
-        log.info("레디스 장애로 인한 fallback 메소드 호출: {}", exception.getMessage());
-    }
-
     public BestPostsResponse readBestPosts(LocalDateTime time) {
-        // 레디스에서 인기글 조회
-        BestPosts bestPosts = bestPostsRedisTemplate.opsForValue().get(BEST_POSTS_PREFIX + time);
-        return new BestPostsResponse(bestPosts.getTime(), bestPosts.getCount(), bestPosts.getBestPostDtos());
+        return bestPostsRedisTemplate.opsForValue().get(BEST_POSTS_PREFIX + time);
     }
 
 //    @Scheduled(cron = "0 * * * * *") // 1분마다 실행
@@ -67,12 +58,17 @@ public class BestPostCacheService {
         updateTime();
         log.info("update time: {} -> {}", previousTime, currentTime);
 
-        // previousTime 변수에 해당하는 key에 저장된 게시글 id들 중 조회수가 높은 10개의 id를 조회 및 삭제
+        // 상위 10개의 게시글 ID 조회
         Set<String> postIds = stringRedisTemplate.opsForZSet().reverseRange(previousTime, 0, 9);
         stringRedisTemplate.delete(previousTime);
 
-        // 게시글 id에 해당하는 데이터를 DB에서 조회한 후 dto 변환
-        List<ReadPostInListResponse> bestPostDtos = postIds.stream()
+        // 인기글 DTO 생성 후 Redis에 저장
+        BestPostsResponse bestPostsResponse = new BestPostsResponse(previousTime, getPostResponse(postIds));
+        bestPostsRedisTemplate.opsForValue().set(BEST_POSTS_PREFIX + previousTime, bestPostsResponse);
+    }
+
+    private List<ReadPostInListResponse> getPostResponse(Set<String> postIds) {
+        return postIds.stream()
                 .map(postId -> {
                     Post post = postRepository.findById(Long.valueOf(postId))
                             .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
@@ -82,10 +78,6 @@ public class BestPostCacheService {
                             post.getComments().size(), post.getLikes().size(), post.getBookmarks().size(), post.getViews());
                 })
                 .toList();
-
-        // 레디스에 인기글 저장
-        BestPosts bestPosts = new BestPosts(previousTime, bestPostDtos);
-        bestPostsRedisTemplate.opsForValue().set(BEST_POSTS_PREFIX + previousTime, bestPosts);
     }
 
     private void updateTime() {

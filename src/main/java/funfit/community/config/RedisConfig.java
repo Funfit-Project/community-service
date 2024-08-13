@@ -1,6 +1,6 @@
 package funfit.community.config;
 
-import funfit.community.post.entity.BestPosts;
+import funfit.community.post.dto.BestPostsResponse;
 import funfit.community.api.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.EnableCaching;
@@ -34,11 +34,11 @@ public class RedisConfig {
     }
 
     @Bean
-    public RedisTemplate<String, BestPosts> bestPostsRedisTemplate() {
-        RedisTemplate<String, BestPosts> redisTemplate = new RedisTemplate<>();
+    public RedisTemplate<String, BestPostsResponse> bestPostsRedisTemplate() {
+        RedisTemplate<String, BestPostsResponse> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory());
         redisTemplate.setKeySerializer(new StringRedisSerializer());
-        redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(BestPosts.class));
+        redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(BestPostsResponse.class));
         return redisTemplate;
     }
 
