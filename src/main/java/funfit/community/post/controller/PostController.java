@@ -17,6 +17,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -38,12 +39,26 @@ public class PostController {
                 .body(new SuccessResponse("게시글 등록 성공", readPostResponse));
     }
 
+//    @GetMapping("/post/{postId}")
+//    public ResponseEntity readOne(@PathVariable long postId) {
+//        ReadPostResponse readPostResponse = postQueryService.readPost(postId);
+//        postService.increaseViews(postId);
+//        return ResponseEntity.status(HttpStatus.OK)
+//                .body(new SuccessResponse("게시글 조회 성공", readPostResponse));
+//    }
+
+    // 조회수 증가 로직을 비동기 처리로
     @GetMapping("/post/{postId}")
     public ResponseEntity readOne(@PathVariable long postId) {
         ReadPostResponse readPostResponse = postQueryService.readPost(postId);
-        postService.increaseViews(postId);
+        increaseView(postId);
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new SuccessResponse("게시글 조회 성공", readPostResponse));
+    }
+
+    @Async
+    public void increaseView(long postId) {
+        postService.increaseViews(postId);
     }
 
     @PostMapping("/post/{postId}/bookmark")

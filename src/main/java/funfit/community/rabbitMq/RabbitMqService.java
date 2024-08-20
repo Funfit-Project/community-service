@@ -24,7 +24,7 @@ public class RabbitMqService {
         log.info("RabbitMQ | on message, queue name = edited_user_email_for_community, message = {}", email);
         User user = authServiceClient.getUserByEmail(email);
 
-        cacheManager.getCache("username").put(email, user.getUserName());
-        log.info("로컬캐시 값 변경 = {}", user.getUserName());
+        cacheManager.getCache("user").put(email, user);
+        log.info("로컬캐시 값 변경 = {}", user.toString());
     }
 }

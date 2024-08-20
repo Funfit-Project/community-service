@@ -38,9 +38,6 @@ public class Post extends BaseEntity {
     private int commentCount; // 반정규화
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Image> images = new ArrayList<>();
-
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comments = new ArrayList<>();
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -63,12 +60,6 @@ public class Post extends BaseEntity {
         this.getComments().add(comment);
         comment.setPost(this);
         this.commentCount++;
-    }
-
-    // 연관관계 편의 메서드
-    public void addImage(Image image) {
-        this.getImages().add(image);
-        image.setPost(this);
     }
 
     // 연관관계 편의 메서드
@@ -97,12 +88,6 @@ public class Post extends BaseEntity {
 
     public void updateContent(String newContent) {
         this.content = newContent;
-    }
-
-    public void updateImages(List<Image> images) {
-        this.images.clear();
-        images.stream()
-                .forEach(image -> this.images.add(image));
     }
 
     public void increaseViews() {

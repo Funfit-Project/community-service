@@ -27,10 +27,6 @@ public class PostService {
 
     public long create(CreatePostRequest createPostRequest, String email) {
         Post post = Post.create(email, createPostRequest.getTitle(), createPostRequest.getContent(), Category.find(createPostRequest.getCategoryName()));
-        if (createPostRequest.getImageUrls() != null && !createPostRequest.getImageUrls().isEmpty()) {
-            createPostRequest.getImageUrls().stream()
-                    .forEach(imageUrl -> post.addImage(Image.create(imageUrl)));
-        }
         postRepository.save(post);
         return post.getId();
     }

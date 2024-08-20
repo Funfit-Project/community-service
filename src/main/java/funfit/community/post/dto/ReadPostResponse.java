@@ -6,7 +6,6 @@ import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Getter
 @NoArgsConstructor
@@ -22,5 +21,4 @@ public class ReadPostResponse implements Serializable {
     private int bookmarkCount;
     private int likeCount;
     private int views;
-    private List<String> imageUrls;
 }

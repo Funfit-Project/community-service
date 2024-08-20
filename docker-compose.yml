@@ -15,9 +15,9 @@ services:
     image: mysql
     container_name: community_mysql
     environment:
-      MYSQL_ROOT_PASSWORD: ${DATASOURCE_PASSWORD}
+      MYSQL_ROOT_PASSWORD: thgml0108^^*! # ${DATASOURCE_PASSWORD}
       MYSQL_DATABASE: community
-      MYSQL_PASSWORD: ${DATASOURCE_PASSWORD}
+      MYSQL_PASSWORD: thgml0108^^*! # ${DATASOURCE_PASSWORD}
     ports:
       - "3308:3306"
     healthcheck:
@@ -25,19 +25,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - funfit
-
-  mongo:
-    image: mongo
-    container_name: mongo
-    hostname: mongo
-    ports:
-      - "27017:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: root
-      MONGO_INITDB_DATABASE: funfit
     networks:
       - funfit
 
