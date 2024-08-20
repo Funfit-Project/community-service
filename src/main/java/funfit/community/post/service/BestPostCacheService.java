@@ -72,8 +72,8 @@ public class BestPostCacheService {
                 .map(postId -> {
                     Post post = postRepository.findById(Long.valueOf(postId))
                             .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
-                    String postUserName = userDataProvider.getUserName(post.getWriterEmail());
-                    return new ReadPostInListResponse(post.getTitle(), postUserName, post.getCategory().getName(),
+                    String username = userDataProvider.getUsername(post.getWriterEmail());
+                    return new ReadPostInListResponse(post.getTitle(), username, post.getCategory().getName(),
                             post.getCreatedAt().toString(), post.getUpdatedAt().toString(),
                             post.getComments().size(), post.getLikes().size(), post.getBookmarks().size(), post.getViews());
                 })

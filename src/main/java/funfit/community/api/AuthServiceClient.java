@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 public interface AuthServiceClient {
 
     @GetMapping("/feignClient/user/community")
-    User getUserByEmail(@RequestParam String email);
+    User getUserByEmail(@RequestParam(name = "email") String email);
 
     @Component
     @Slf4j

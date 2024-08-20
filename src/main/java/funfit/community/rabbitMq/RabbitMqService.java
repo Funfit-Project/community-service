@@ -5,7 +5,7 @@ import funfit.community.api.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -13,8 +13,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class RabbitMqService {
 
-    private final RedisTemplate<String, User> redisTemplate;
     private final AuthServiceClient authServiceClient;
+    private final CacheManager cacheManager;
 
     /**
      * 회원 정보 변경 시 -> email을 통해 회원 정보 요청
@@ -23,6 +23,8 @@ public class RabbitMqService {
     public void onMessageInEditedUserEmail(String email) {
         log.info("RabbitMQ | on message, queue name = edited_user_email_for_community, message = {}", email);
         User user = authServiceClient.getUserByEmail(email);
-        redisTemplate.opsForValue().set(user.getEmail(), user);
+
+        cacheManager.getCache("username").put(email, user.getUserName());
+        log.info("로컬캐시 값 변경 = {}", user.getUserName());
     }
 }
