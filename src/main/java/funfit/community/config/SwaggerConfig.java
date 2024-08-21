@@ -1,23 +1,23 @@
 package funfit.community.config;
 
-import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.servers.Server;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-@Configuration
-public class SwaggerConfig {
-    @Bean
-    public OpenAPI openAPI() {
-        return new OpenAPI()
-                .components(new Components())
-                .info(apiInfo());
-    }
+import java.util.List;
 
-    private Info apiInfo() {
-        return new Info()
-                .title("펀핏-커뮤니티")
-                .description("펀핏 커뮤니티 api");
+@Configuration
+@OpenAPIDefinition
+public class SwaggerConfig {
+
+    @Bean
+    public OpenAPI customOpenAPI(@Value("${openapi.service.url}") String url) {
+        return new OpenAPI()
+                .servers(List.of(new Server().url(url)))
+                .info(new Info().title("Community Service API"));
     }
 }
