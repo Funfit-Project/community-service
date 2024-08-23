@@ -26,11 +26,11 @@ jobs:
         with:
           files: ./src/main/resources/application.yml
         env:
+          eureka.client.service-url.defaultZone: ${{ secrets.DISCOVERY_URL }}
+          openapi.service.url: ${{ secrets.GATEWAY_URL }}
           spring.datasource.url: ${{ secrets.DATASOURCE_URL }}
           spring.datasource.username: ${{ secrets.DATASOURCE_USERNAME }}
           spring.datasource.password: ${{ secrets.DATASOURCE_PASSWORD }}
-          spring.data.redis.host: ${{ secrets.EC2_HOST }}
-          spring.data.redis.port: ${{ secrets.REDIS_PORT }}
           jwt.secret: ${{ secrets.JWT_SECRET }}
 
       - name: build with gradle
@@ -52,11 +52,30 @@ jobs:
       - name: deploy to EC2
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.EC2_HOST }}
+          host: ${{ secrets.PUBLIC_EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_PRIVATE_KEY }}
           script: |
-            sudo docker pull ${{ secrets.DOCKER_USERNAME }}/funfit_community
-            docker rm -f $(docker ps -qa)
-            docker run -d --name redis -p 6379:6379 redis 
-            docker run -d --name funfit_community -p 8080:8080 ${{ secrets.DOCKER_USERNAME }}/funfit_community:latest
+            ssh -i /home/ubuntu/funfit.pem ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+            
+              sudo docker pull ${{ secrets.DOCKER_USERNAME }}/funfit_community
+            
+              existing_container=$(docker ps -a -q -f name=funfit_community)
+              if [ -n "$existing_container" ]; then
+                docker rm -f $existing_container
+              fi
+              docker run -d --name funfit_community --network host -p 8080:8080 ${{ secrets.DOCKER_USERNAME }}/funfit_community:latest 
+            
+              existing_container=$(docker ps -a -q -f name=redis)
+              if [ -n "$existing_container" ]; then
+                docker rm -f $existing_container
+              fi
+              docker run -d --name redis --network host -p 6379:6379 redis 
+            
+              existing_container=$(docker ps -a -q -f name=rabbitmq)
+              if [ -n "$existing_container" ]; then
+                docker rm -f $existing_container
+              fi
+              docker run -d --name rabbitmq --network host -p 5672:5672 -p 15672:15672 rabbitmq:management
+            
+            EOF

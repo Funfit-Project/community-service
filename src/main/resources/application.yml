@@ -1,23 +1,22 @@
 server:
-  port: 8083
+  port: 8080
 
 eureka:
+  instance:
+    prefer-ip-address: true
   client:
     register-with-eureka: true
     fetch-registry: true
     service-url:
-      defaultZone: http://eureka-discovery:8761/eureka
+      defaultZone: ${DISCOVERY_URL}
 
 spring:
   application:
     name: community-service
   datasource:
-    url: jdbc:mysql://community_mysql:3306/community?useSSL=false&allowPublicKeyRetrieval=true
-    username: root
+    url: ${DATASOURCE_URL}
+    username: ${DATASOURCE_USERNAME}
     password: ${DATASOURCE_PASSWORD}
-    hikari:
-      connection-timeout: 5000
-      maximum-pool-size: 250
   jpa:
     hibernate:
       ddl-auto: update
@@ -32,9 +31,6 @@ spring:
     username: guest
     password: guest
     exchange: funfit
-  data:
-    mongodb:
-      uri: mongodb://root:root@mongo:27017/funfit?authSource=admin
   cloud:
     openfeign:
       circuitbreaker:
@@ -55,7 +51,7 @@ logging:
     org:
       hibernate.SQL: debug
 jwt:
-  secret: flwkegnwoirgnoaeringaleriknglakernglekrng # ${JWT_SECRET}
+  secret: ${JWT_SECRET}
 
 springdoc:
   api-docs:
@@ -70,4 +66,4 @@ springdoc:
 
 openapi:
   service:
-    url: http://gateway-service:8080
+    url: ${GATEWAY_URL}
