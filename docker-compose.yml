@@ -93,3 +93,8 @@ services:
       - redis-slave
     ports:
       - "26481:26379"
+
+networks:
+  default:
+    external:
+      name: funfit
