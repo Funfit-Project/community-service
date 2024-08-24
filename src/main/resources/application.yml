@@ -1,36 +1,73 @@
+server:
+  port: 8080
+
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: ${DISCOVERY_URL}
+
 spring:
+  application:
+    name: community-service
   datasource:
     url: ${DATASOURCE_URL}
     username: ${DATASOURCE_USERNAME}
     password: ${DATASOURCE_PASSWORD}
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
         format_sql: true
+    open-in-view: false
   rabbitmq:
-    host: localhost
+    host: ${MQ_HOST}
     port: 5672
     username: guest
     password: guest
+    exchange: funfit
+  cloud:
+    openfeign:
+      circuitbreaker:
+        enabled: true
   data:
     redis:
-      host: ${EC2_HOST}
-      port: ${REDIS_PORT}
+      host: ${REDIS_HOST}
+      port: 6379
+
+resilience4j.circuitbreaker:
+  configs:
+    default:
+      slidingWindowSize: 4
+      failureRateThreshold: 50
+      waitDurationInOpenState: 10000
+  instances:
+    auth:
+      baseConfig: default
+
 logging:
   level:
     org:
       hibernate.SQL: debug
 jwt:
   secret: ${JWT_SECRET}
+
 springdoc:
+  api-docs:
+    enabled: true
   packages-to-scan: funfit.community
   default-consumes-media-type: application/json;charset=UTF-8
   default-produces-media-type: application/json;charset=UTF-8
   swagger-ui:
-    path: /
     disable-swagger-default-url: true
     display-request-duration: true
     operations-sorter: alph
+
+openapi:
+  service:
+    url: ${GATEWAY_URL}

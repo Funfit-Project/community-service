@@ -8,6 +8,9 @@ import org.springframework.http.HttpStatus;
 @RequiredArgsConstructor
 public enum ErrorCode {
 
+    // external service
+    UNAVAILABLE_AUTH_SERVICE(HttpStatus.SERVICE_UNAVAILABLE, "현재 auth 서비스는 사용 불가입니다."),
+
     NOT_FOUND(HttpStatus.NOT_FOUND, "요청하신 데이터를 찾을 수 없습니다."),
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "접근 권한이 없습니다."),
 
@@ -25,11 +28,10 @@ public enum ErrorCode {
     DUPLICATED_RELATIONSHIP(HttpStatus.BAD_REQUEST, "이미 등록된 트레이너입니다"),
     INVALID_ROLE(HttpStatus.BAD_REQUEST, "잘못된 사용자 역할입니다."),
 
-    // schedule
-    ALREADY_RESERVATION(HttpStatus.BAD_REQUEST, "이미 예약된 시간입니다."),
-
     // post
     INVALID_CATEGORY(HttpStatus.BAD_REQUEST, "잘못된 카테고리입니다."),
+    NOT_FOUND_POST(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없습니다."),
+
 
     // jwt
     EXPIRED_JWT(HttpStatus.BAD_REQUEST, "만료된 토큰입니다."),
@@ -37,7 +39,9 @@ public enum ErrorCode {
     REQUIRED_JWT(HttpStatus.BAD_REQUEST, "토큰은 필수입니다."),
 
     // unauthorized
-    ONLY_TRAINER(HttpStatus.UNAUTHORIZED, "트레이너만 접근 가능합니다.")
+    ONLY_TRAINER(HttpStatus.UNAUTHORIZED, "트레이너만 접근 가능합니다."),
+
+    INVALID_BEST_POSTS_TIME(HttpStatus.BAD_REQUEST, "인기글 시간은 한시간 단위입니다."),
     ;
 
     private final HttpStatus httpStatus;

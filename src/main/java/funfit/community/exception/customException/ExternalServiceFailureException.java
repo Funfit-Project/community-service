@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public class CustomJwtException extends RuntimeException {
+public class ExternalServiceFailureException extends RuntimeException {
 
     private final ErrorCode errorCode;
 }

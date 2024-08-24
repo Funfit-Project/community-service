@@ -2,12 +2,13 @@ package funfit.community.utils;
 
 import funfit.community.exception.ErrorCode;
 import funfit.community.exception.customException.CustomJwtException;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 
@@ -20,14 +21,21 @@ public class JwtUtils {
     private final Key signingKey;
     private final JwtParser jwtParser;
 
-    public JwtUtils(@Value("${jwt.secret}") String secretKey) {
-        this.signingKey = Keys.hmacShaKeyFor(secretKey.getBytes());
+    @Autowired
+    public JwtUtils(Key signingKey) {
+        this.signingKey = signingKey;
         this.jwtParser = Jwts.parserBuilder().setSigningKey(signingKey).build();
     }
 
     public String getEmailFromHeader(HttpServletRequest request) {
         String jwt = getJwtFromHeader(request);
-        return jwtParser.parseClaimsJws(jwt).getBody().getSubject();
+        try {
+            return jwtParser.parseClaimsJws(jwt).getBody().getSubject();
+        } catch (ExpiredJwtException e) {
+            throw new CustomJwtException(ErrorCode.EXPIRED_JWT);
+        } catch (JwtException e) {
+            throw new CustomJwtException(ErrorCode.INVALID_JWT);
+        }
     }
 
     private String getJwtFromHeader(HttpServletRequest request) {

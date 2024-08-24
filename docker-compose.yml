@@ -1,0 +1,100 @@
+services:
+  springboot:
+    build: .
+    image: community
+    container_name: community
+    ports:
+      - "8080:8080"
+#    depends_on:
+#      mysql:
+#        condition: service_healthy
+
+#  mysql:
+#    image: mysql
+#    container_name: community_mysql
+#    environment:
+#      MYSQL_ROOT_PASSWORD: ${DATASOURCE_PASSWORD}
+#      MYSQL_DATABASE: community
+#      MYSQL_PASSWORD: ${DATASOURCE_PASSWORD}
+#    ports:
+#      - "3306:3306"
+#    healthcheck:
+#      test: ["CMD-SHELL", "mysqladmin ping -h localhost"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 5
+#
+#  redis-master:
+#    image: bitnami/redis
+#    container_name: community_redis_1
+#    hostname: community_redis_1
+#    environment:
+#      - REDIS_REPLICATION_MODE=master
+#      - REDIS_PASSWORD=1234 # 해당 레디스 서버 접속을 위한 비밀번호
+#      - REDIS_MASTER_PASSWORD=1234 # 마스터 서버 접속을 위한 비밀번호
+#    ports:
+#      - "6479:6379"
+#
+#  redis-slave:
+#    image: bitnami/redis
+#    container_name: community_redis_2
+#    hostname: community_redis_2
+#    environment:
+#      - REDIS_REPLICATION_MODE=slave
+#      - REDIS_MASTER_HOST=community_redis_1
+#      - REDIS_PASSWORD=1234
+#      - REDIS_MASTER_PASSWORD=1234
+#    ports:
+#      - "6480:6379"
+#    depends_on:
+#      - redis-master
+#
+#  redis-sentinel-1:
+#    image: bitnami/redis-sentinel
+#    container_name: community_redis_sentinel_1
+#    hostname: community_redis_sentinel_1
+#    environment:
+#      - REDIS_MASTER_HOST=community_redis_1
+#      - REDIS_MASTER_SET=mymaster
+#      - REDIS_MASTER_PASSWORD=1234
+#      - REDIS_SENTINEL_QUORUM=2
+#    depends_on:
+#      - redis-master
+#      - redis-slave
+#    ports:
+#      - "26479:26379"
+#
+#  redis-sentinel-2:
+#    image: bitnami/redis-sentinel
+#    container_name: community_redis_sentinel_2
+#    hostname: community_redis_sentinel_2
+#    environment:
+#      - REDIS_MASTER_HOST=community_redis_1
+#      - REDIS_MASTER_SET=mymaster
+#      - REDIS_MASTER_PASSWORD=1234
+#      - REDIS_SENTINEL_QUORUM=2
+#    depends_on:
+#      - redis-master
+#      - redis-slave
+#    ports:
+#      - "26480:26379"
+#
+#  redis-sentinel-3:
+#    image: bitnami/redis-sentinel
+#    container_name: community_redis_sentinel_3
+#    hostname: community_redis_sentinel_3
+#    environment:
+#      - REDIS_MASTER_HOST=community_redis_1
+#      - REDIS_MASTER_SET=mymaster
+#      - REDIS_MASTER_PASSWORD=1234
+#      - REDIS_SENTINEL_QUORUM=2
+#    depends_on:
+#      - redis-master
+#      - redis-slave
+#    ports:
+#      - "26481:26379"
+#
+#networks:
+#  default:
+#    external:
+#      name: funfit

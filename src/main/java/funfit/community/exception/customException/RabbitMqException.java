@@ -1,12 +1,13 @@
 package funfit.community.exception.customException;
 
-import funfit.community.exception.ErrorCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public class CustomJwtException extends RuntimeException {
+public class RabbitMqException extends RuntimeException {
 
-    private final ErrorCode errorCode;
+    public RabbitMqException(String message) {
+        super(message);
+    }
 }
