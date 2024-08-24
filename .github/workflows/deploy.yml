@@ -31,6 +31,7 @@ jobs:
           spring.datasource.url: ${{ secrets.DATASOURCE_URL }}
           spring.datasource.username: ${{ secrets.DATASOURCE_USERNAME }}
           spring.datasource.password: ${{ secrets.DATASOURCE_PASSWORD }}
+          spring.data.redis.host: ${{ secrets.REDIS_HOST }}
           jwt.secret: ${{ secrets.JWT_SECRET }}
 
       - name: build with gradle
@@ -65,17 +66,5 @@ jobs:
                 docker rm -f $existing_container
               fi
               docker run -d --name funfit_community --network host -p 8080:8080 ${{ secrets.DOCKER_USERNAME }}/funfit_community:latest 
-            
-              existing_container=$(docker ps -a -q -f name=redis)
-              if [ -n "$existing_container" ]; then
-                docker rm -f $existing_container
-              fi
-              docker run -d --name redis --network host -p 6379:6379 redis 
-            
-              existing_container=$(docker ps -a -q -f name=rabbitmq)
-              if [ -n "$existing_container" ]; then
-                docker rm -f $existing_container
-              fi
-              docker run -d --name rabbitmq --network host -p 5672:5672 -p 15672:15672 rabbitmq:management
-            
+  
             EOF

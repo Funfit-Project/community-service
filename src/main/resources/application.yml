@@ -35,6 +35,10 @@ spring:
     openfeign:
       circuitbreaker:
         enabled: true
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: 6379
 
 resilience4j.circuitbreaker:
   configs:
