@@ -1,71 +1,71 @@
-name: Build and Deploy
-
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
-jobs:
-  build-and-deploy:
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: checkout
-        uses: actions/checkout@v3
-
-      - name: set up jdk 17
-        uses: actions/setup-java@v3
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: set yml
-        uses: microsoft/variable-substitution@v1
-        with:
-          files: ./src/main/resources/application.yml
-        env:
-          eureka.client.service-url.defaultZone: ${{ secrets.DISCOVERY_URL }}
-          openapi.service.url: ${{ secrets.GATEWAY_URL }}
-          spring.datasource.url: ${{ secrets.DATASOURCE_URL }}
-          spring.datasource.username: ${{ secrets.DATASOURCE_USERNAME }}
-          spring.datasource.password: ${{ secrets.DATASOURCE_PASSWORD }}
-          spring.data.redis.host: ${{ secrets.REDIS_HOST }}
-          spring.rabbitmq.host: ${{ secrets.MQ_HOST }}
-          jwt.secret: ${{ secrets.JWT_SECRET }}
-
-      - name: build with gradle
-        run: |
-          chmod +x ./gradlew
-          ./gradlew build -x test
-
-      - name: docker login
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
-
-      - name: docker image build
-        run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/funfit_community .
-          docker push ${{ secrets.DOCKER_USERNAME }}/funfit_community
-
-      - name: deploy to EC2
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.PUBLIC_EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.EC2_PRIVATE_KEY }}
-          script: |
-            ssh -i /home/ubuntu/funfit.pem ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
-            
-              sudo docker pull ${{ secrets.DOCKER_USERNAME }}/funfit_community
-            
-              existing_container=$(docker ps -a -q -f name=funfit_community)
-              if [ -n "$existing_container" ]; then
-                docker rm -f $existing_container
-              fi
-              docker run -d --name funfit_community --network host -p 8080:8080 ${{ secrets.DOCKER_USERNAME }}/funfit_community:latest 
-  
-            EOF
+#name: Build and Deploy
+#
+#on:
+#  push:
+#    branches: [ "main" ]
+#  pull_request:
+#    branches: [ "main" ]
+#
+#jobs:
+#  build-and-deploy:
+#
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - name: checkout
+#        uses: actions/checkout@v3
+#
+#      - name: set up jdk 17
+#        uses: actions/setup-java@v3
+#        with:
+#          java-version: '17'
+#          distribution: 'temurin'
+#
+#      - name: set yml
+#        uses: microsoft/variable-substitution@v1
+#        with:
+#          files: ./src/main/resources/application.yml
+#        env:
+#          eureka.client.service-url.defaultZone: ${{ secrets.DISCOVERY_URL }}
+#          openapi.service.url: ${{ secrets.GATEWAY_URL }}
+#          spring.datasource.url: ${{ secrets.DATASOURCE_URL }}
+#          spring.datasource.username: ${{ secrets.DATASOURCE_USERNAME }}
+#          spring.datasource.password: ${{ secrets.DATASOURCE_PASSWORD }}
+#          spring.data.redis.host: ${{ secrets.REDIS_HOST }}
+#          spring.rabbitmq.host: ${{ secrets.MQ_HOST }}
+#          jwt.secret: ${{ secrets.JWT_SECRET }}
+#
+#      - name: build with gradle
+#        run: |
+#          chmod +x ./gradlew
+#          ./gradlew build -x test
+#
+#      - name: docker login
+#        uses: docker/login-action@v2
+#        with:
+#          username: ${{ secrets.DOCKER_USERNAME }}
+#          password: ${{ secrets.DOCKER_TOKEN }}
+#
+#      - name: docker image build
+#        run: |
+#          docker build -t ${{ secrets.DOCKER_USERNAME }}/funfit_community .
+#          docker push ${{ secrets.DOCKER_USERNAME }}/funfit_community
+#
+#      - name: deploy to EC2
+#        uses: appleboy/ssh-action@master
+#        with:
+#          host: ${{ secrets.PUBLIC_EC2_HOST }}
+#          username: ubuntu
+#          key: ${{ secrets.EC2_PRIVATE_KEY }}
+#          script: |
+#            ssh -i /home/ubuntu/funfit.pem ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+#
+#              sudo docker pull ${{ secrets.DOCKER_USERNAME }}/funfit_community
+#
+#              existing_container=$(docker ps -a -q -f name=funfit_community)
+#              if [ -n "$existing_container" ]; then
+#                docker rm -f $existing_container
+#              fi
+#              docker run -d --name funfit_community --network host -p 8080:8080 ${{ secrets.DOCKER_USERNAME }}/funfit_community:latest
+#
+#            EOF

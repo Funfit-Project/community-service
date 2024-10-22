@@ -9,7 +9,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisSentinelConfiguration;
-import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
@@ -26,32 +25,35 @@ public class RedisConfig {
     @Value("${spring.data.redis.port}")
     private int port;
 
-    @Bean
-    public RedisConnectionFactory redisConnectionFactory() {
-
-        RedisStandaloneConfiguration redisStandaloneConfiguration = new RedisStandaloneConfiguration();
-        redisStandaloneConfiguration.setHostName(host);
-        redisStandaloneConfiguration.setPort(port);
-        return new LettuceConnectionFactory(redisStandaloneConfiguration);
-    }
-
     /*
-    로컬에서 센티널 구성 시 코드
+    배포 환경에서
      */
 //    @Bean
 //    public RedisConnectionFactory redisConnectionFactory() {
 //
-//        RedisSentinelConfiguration sentinelConfiguration = new RedisSentinelConfiguration()
-//                .master("mymaster")
-//                .sentinel("community_redis_sentinel_1", 26379)
-//                .sentinel("community_redis_sentinel_2", 26379)
-//                .sentinel("community_redis_sentinel_3", 26379);
-//        sentinelConfiguration.setPassword("1234");
-//
-//        LettuceConnectionFactory connectionFactory = new LettuceConnectionFactory(sentinelConfiguration);
-//        connectionFactory.setTimeout(5000);
-//        return connectionFactory;
+//        RedisStandaloneConfiguration redisStandaloneConfiguration = new RedisStandaloneConfiguration();
+//        redisStandaloneConfiguration.setHostName(host);
+//        redisStandaloneConfiguration.setPort(port);
+//        return new LettuceConnectionFactory(redisStandaloneConfiguration);
 //    }
+
+    /*
+    로컬에서 센티널 구성 시
+     */
+    @Bean
+    public RedisConnectionFactory redisConnectionFactory() {
+
+        RedisSentinelConfiguration sentinelConfiguration = new RedisSentinelConfiguration()
+                .master("mymaster")
+                .sentinel("community_redis_sentinel_1", 26379)
+                .sentinel("community_redis_sentinel_2", 26379)
+                .sentinel("community_redis_sentinel_3", 26379);
+        sentinelConfiguration.setPassword("1234");
+
+        LettuceConnectionFactory connectionFactory = new LettuceConnectionFactory(sentinelConfiguration);
+        connectionFactory.setTimeout(5000);
+        return connectionFactory;
+    }
 
     @Bean
     public RedisTemplate<String, BestPostsResponse> bestPostsRedisTemplate() {
