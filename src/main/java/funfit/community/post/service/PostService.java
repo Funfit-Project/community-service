@@ -9,6 +9,7 @@ import funfit.community.post.repository.LikeRepository;
 import funfit.community.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,9 +53,8 @@ public class PostService {
         }, () -> post.addBookmark(Bookmark.create(email)));
     }
 
+    @Async
     public void likePost(long postId, String email) {
-
-        // post 조회 (with Lock)
         Post post = postRepository.findByIdWithLock(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
 

@@ -39,15 +39,6 @@ public class PostController {
                 .body(new SuccessResponse("게시글 등록 성공", readPostResponse));
     }
 
-//    @GetMapping("/post/{postId}")
-//    public ResponseEntity readOne(@PathVariable long postId) {
-//        ReadPostResponse readPostResponse = postQueryService.readPost(postId);
-//        postService.increaseViews(postId);
-//        return ResponseEntity.status(HttpStatus.OK)
-//                .body(new SuccessResponse("게시글 조회 성공", readPostResponse));
-//    }
-
-    // 조회수 증가 로직을 비동기 처리로
     @GetMapping("/post/{postId}")
     public ResponseEntity readOne(@PathVariable long postId) {
         ReadPostResponse readPostResponse = postQueryService.readPost(postId);
@@ -87,8 +78,7 @@ public class PostController {
     @PostMapping("/posts/{postId}/like")
     public ResponseEntity likePost(@PathVariable long postId, HttpServletRequest request) {
         postService.likePost(postId, jwtUtils.getEmailFromHeader(request));
-        ReadPostResponse readPostResponse = postQueryService.readPost(postId);
         return ResponseEntity.status(HttpStatus.OK)
-                .body(new SuccessResponse("좋아요 등록/취소 성공", readPostResponse));
+                .body(new SuccessResponse("좋아요 등록/취소 성공", null));
     }
 }
