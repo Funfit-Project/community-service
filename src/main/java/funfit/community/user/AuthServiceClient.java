@@ -1,4 +1,4 @@
-package funfit.community.api;
+package funfit.community.user;
 
 import funfit.community.exception.ErrorCode;
 import funfit.community.exception.customException.ExternalServiceFailureException;

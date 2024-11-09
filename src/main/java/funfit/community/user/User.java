@@ -1,4 +1,4 @@
-package funfit.community.api;
+package funfit.community.user;
 
 import lombok.*;
 
