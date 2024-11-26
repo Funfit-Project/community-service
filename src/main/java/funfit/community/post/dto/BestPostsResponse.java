@@ -1,6 +1,5 @@
 package funfit.community.post.dto;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 

@@ -1,7 +1,7 @@
 package funfit.community.rabbitMq;
 
-import funfit.community.api.AuthServiceClient;
-import funfit.community.api.User;
+import funfit.community.user.AuthServiceClient;
+import funfit.community.user.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
