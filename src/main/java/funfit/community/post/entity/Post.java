@@ -9,7 +9,6 @@ import java.util.List;
 
 @Entity
 @Getter
-@Table(indexes = @Index(name = "like_count_idx", columnList = "like_count"))
 public class Post extends BaseEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,11 +30,11 @@ public class Post extends BaseEntity {
 
     private int views;
 
-    private int likeCount; // 반정규화
+    private int likeCount;
 
-    private int bookmarkCount; // 반정규화
+    private int bookmarkCount;
 
-    private int commentCount; // 반정규화
+    private int commentCount;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comments = new ArrayList<>();
@@ -91,6 +90,10 @@ public class Post extends BaseEntity {
     }
 
     public void increaseViews() {
-        this.views++;
+        views++;
+    }
+
+    public void changeLikeCount(int likeCount) {
+        this.likeCount = likeCount;
     }
 }

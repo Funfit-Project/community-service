@@ -6,7 +6,7 @@ import funfit.community.post.dto.BestPostsResponse;
 import funfit.community.post.dto.ReadPostInListResponse;
 import funfit.community.post.entity.Post;
 import funfit.community.post.repository.PostRepository;
-import funfit.community.api.UserDataProvider;
+import funfit.community.user.UserDataProvider;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,9 +32,10 @@ public class BestPostCacheService {
     private final RedisTemplate<String, String> stringRedisTemplate;
     private final RedisTemplate<String, BestPostsResponse> bestPostsRedisTemplate;
     private final PostRepository postRepository;
+    private static final String POST_VIEWS_PREFIX = "views:";
+    private static final String BEST_POSTS_PREFIX = "best_posts:";
     private String currentTime;
     private String previousTime;
-    private static final String BEST_POSTS_PREFIX = "best_posts_";
 
     @PostConstruct
     public void initTime() {
@@ -42,27 +43,22 @@ public class BestPostCacheService {
         this.previousTime = this.currentTime = LocalDateTime.of(now.getYear(), now.getMonth(), now.getDayOfMonth(), now.getHour(), 0, 0).toString();
     }
 
-    public void reflectPostViewsInRedis(long postId) {
-        stringRedisTemplate.opsForZSet().incrementScore(currentTime, String.valueOf(postId), 1);
+    public void reflectPostViewsInCache(long postId) {
+        stringRedisTemplate.opsForZSet().incrementScore(POST_VIEWS_PREFIX + currentTime, String.valueOf(postId), 1);
     }
 
     public BestPostsResponse readBestPosts(LocalDateTime time) {
         return bestPostsRedisTemplate.opsForValue().get(BEST_POSTS_PREFIX + time);
     }
 
-//    @Scheduled(cron = "0 * * * * *") // 1분마다 실행
     @Scheduled(cron = "0 0 * * * *") // 매 시간 정각마다 실행
     @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 1.5, maxDelay = 5000))
-    public void saveBestPostsDtoInRedis() {
-        log.info("스케줄링 작업 수행: 인기글 추출 작업");
+    public void cacheBestPostsDto() {
         updateTime();
-        log.info("update time: {} -> {}", previousTime, currentTime);
 
-        // 상위 10개의 게시글 ID 조회
-        Set<String> postIds = stringRedisTemplate.opsForZSet().reverseRange(previousTime, 0, 9);
+        Set<String> postIds = stringRedisTemplate.opsForZSet().reverseRange(POST_VIEWS_PREFIX + previousTime, 0, 9);
         stringRedisTemplate.delete(previousTime);
 
-        // 인기글 DTO 생성 후 Redis에 저장
         BestPostsResponse bestPostsResponse = new BestPostsResponse(previousTime, getPostResponse(postIds));
         bestPostsRedisTemplate.opsForValue().set(BEST_POSTS_PREFIX + previousTime, bestPostsResponse);
     }
