@@ -1,7 +1,7 @@
 package funfit.community.config;
 
 import funfit.community.post.dto.BestPostsResponse;
-import funfit.community.post.repository.PostLikeRedisRepository;
+import funfit.community.post.service.PostLikeRedisService;
 import funfit.community.user.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -75,11 +75,11 @@ public class RedisConfig {
     }
 
     @Bean
-    public RedisTemplate<String, PostLikeRedisRepository.LikeDto> likesDtoInCacheRedisTemplate() {
-        RedisTemplate<String, PostLikeRedisRepository.LikeDto> redisTemplate = new RedisTemplate<>();
+    public RedisTemplate<String, PostLikeRedisService.LikeDto> likesDtoInCacheRedisTemplate() {
+        RedisTemplate<String, PostLikeRedisService.LikeDto> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory());
         redisTemplate.setKeySerializer(new StringRedisSerializer());
-        redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(PostLikeRedisRepository.LikeDto.class));
+        redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(PostLikeRedisService.LikeDto.class));
         return redisTemplate;
     }
 }

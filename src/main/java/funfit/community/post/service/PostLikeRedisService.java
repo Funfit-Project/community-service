@@ -1,6 +1,8 @@
-package funfit.community.post.repository;
+package funfit.community.post.service;
 
 import funfit.community.post.entity.Like;
+import funfit.community.post.repository.LikeRepository;
+import funfit.community.post.repository.PostRepository;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,7 +12,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.SetOperations;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
@@ -18,8 +20,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Slf4j
-@Component
-public class PostLikeRedisRepository {
+@Service
+public class PostLikeRedisService {
 
     private static final String LIKE_KEY_PREFIX = "like:";
     private static final String LIKE_ADD_KEY = "like:add";
@@ -31,7 +33,7 @@ public class PostLikeRedisRepository {
     private final SetOperations<String, String> likeUserEmailSetOps;
     private final ListOperations<String, LikeDto> likeAddOrDeleteListOps;
 
-    public PostLikeRedisRepository(RedisTemplate<String, String> stringRedisTemplate, RedisTemplate<String, LikeDto> likesDtoInCacheRedisTemplate, PostRepository postRepository, LikeRepository likeRepository) {
+    public PostLikeRedisService(RedisTemplate<String, String> stringRedisTemplate, RedisTemplate<String, LikeDto> likesDtoInCacheRedisTemplate, PostRepository postRepository, LikeRepository likeRepository) {
         this.stringRedisTemplate = stringRedisTemplate;
         this.likesDtoInCacheRedisTemplate = likesDtoInCacheRedisTemplate;
         this.postRepository = postRepository;

@@ -8,7 +8,6 @@ import funfit.community.exception.ErrorCode;
 import funfit.community.exception.customException.BusinessException;
 import funfit.community.post.dto.CreatePostRequest;
 import funfit.community.post.repository.BookmarkRepository;
-import funfit.community.post.repository.PostLikeRedisRepository;
 import funfit.community.post.repository.PostRepository;
 import funfit.community.user.UserDataProvider;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +30,7 @@ public class PostService {
     private final PostRepository postRepository;
     private final BookmarkRepository bookmarkRepository;
     private final UserDataProvider userDataProvider;
-    private final PostLikeRedisRepository postLikeRedisRepository;
+    private final PostLikeRedisService postLikeRedisService;
     @Transactional
     public long create(CreatePostRequest createPostRequest, String email) {
         Post post = Post.create(email, createPostRequest.getTitle(), createPostRequest.getContent(), Category.find(createPostRequest.getCategoryName()));
@@ -66,7 +65,7 @@ public class PostService {
     public void likePost(long postId, String email) {
         postRepository.findById(postId)
                         .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
-        postLikeRedisRepository.likePost(postId, email);
+        postLikeRedisService.likePost(postId, email);
     }
 
     public ReadPostResponse readPost(Long postId) {
