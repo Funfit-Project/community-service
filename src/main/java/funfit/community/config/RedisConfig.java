@@ -1,11 +1,8 @@
 package funfit.community.config;
 
 import funfit.community.post.dto.BestPostsResponse;
-import funfit.community.post.service.PostLikeRedisService;
 import funfit.community.user.User;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -16,8 +13,6 @@ import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 @Configuration
-@EnableCaching
-@Slf4j
 public class RedisConfig {
 
     @Value("${spring.data.redis.host}")
@@ -71,15 +66,6 @@ public class RedisConfig {
         redisTemplate.setConnectionFactory(redisConnectionFactory());
         redisTemplate.setKeySerializer(new StringRedisSerializer());
         redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(User.class));
-        return redisTemplate;
-    }
-
-    @Bean
-    public RedisTemplate<String, PostLikeRedisService.LikeDto> likesDtoInCacheRedisTemplate() {
-        RedisTemplate<String, PostLikeRedisService.LikeDto> redisTemplate = new RedisTemplate<>();
-        redisTemplate.setConnectionFactory(redisConnectionFactory());
-        redisTemplate.setKeySerializer(new StringRedisSerializer());
-        redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(PostLikeRedisService.LikeDto.class));
         return redisTemplate;
     }
 }
