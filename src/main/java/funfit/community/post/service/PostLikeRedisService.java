@@ -6,7 +6,9 @@ import funfit.community.post.repository.LikeRepository;
 import funfit.community.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.redis.core.*;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -38,25 +40,27 @@ public class PostLikeRedisService {
 
     private void like(SetOperations<String, String> setOps, String key, Post post, String email) {
         setOps.add(key, email);
-        Like like = Like.create(email);
-        like.setPost(post);
-        likeRepository.save(like);
+        try {
+            likeRepository.save(Like.create(email, post));
+        } catch (DataIntegrityViolationException e) {
+            log.info("Like 엔티티 중복 저장으로 인한 DataIntegrityViolationException 예외 발생");
+        }
     }
 
     private void unlike(SetOperations<String, String> setOps, String key, Post post, String email) {
         setOps.remove(key, email);
-        likeRepository.findByLikeUserEmailAndPost(email, post)
-                        .ifPresent(like ->  likeRepository.delete(like));
+        try {
+            likeRepository.findByLikeUserEmailAndPost(email, post)
+                    .ifPresent(like ->  likeRepository.delete(like));
+        } catch (ObjectOptimisticLockingFailureException e) {
+            log.info("catch ObjectOptimisticLockingFailureException!");
+        }
     }
 
-    /**
-     * 1분 주기로 레디스의 좋아요 내역을 통해 Likes 테이블에 INSERT, Post 테이블의 likeCount UPDATE
-     */
     @Scheduled(cron = "0 */1 * * * *")
     @Transactional
     public void updateLikeCount() {
-        log.info("게시글 좋아요 내역 DB 반영");
-
+        log.info("updateLikeCount(게시글 좋아요 수 갱신) 스케줄링 작업 시작");
         Set<String> keys = new HashSet<>();
         Cursor<byte[]> cursor = stringRedisTemplate.getConnectionFactory().getConnection()
                 .scan(ScanOptions.scanOptions().match("post:like:*").count(100).build());
@@ -72,5 +76,6 @@ public class PostLikeRedisService {
             postRepository.findById(postId)
                     .ifPresent(post -> post.changeLikeCount(likeCount.intValue()));
         }
+        log.info("updateLikeCount(게시글 좋아요 수 갱신) 스케줄링 작업 종료");
     }
 }

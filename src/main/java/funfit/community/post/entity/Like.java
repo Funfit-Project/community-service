@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Entity
 @Getter
-@Table(name = "likes")
+@Table(name = "likes", uniqueConstraints = @UniqueConstraint(columnNames = {"post_id", "like_user_email"}))
 public class Like {
 
     @Id
@@ -23,6 +23,13 @@ public class Like {
     public static Like create(String likeUserEmail) {
         Like like = new Like();
         like.likeUserEmail = likeUserEmail;
+        return like;
+    }
+
+    public static Like create(String likeUserEmail, Post post) {
+        Like like = new Like();
+        like.likeUserEmail = likeUserEmail;
+        like.post = post;
         return like;
     }
 
