@@ -6,6 +6,7 @@ import funfit.community.post.repository.LikeRepository;
 import funfit.community.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.redis.core.*;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -57,10 +58,12 @@ public class PostLikeRedisService {
         }
     }
 
-    @Scheduled(cron = "0 */1 * * * *")
     @Transactional
+    @Scheduled(cron = "0 */1 * * * *")
+    @SchedulerLock(name = "like_count_scheduler")
     public void updateLikeCount() {
         log.info("updateLikeCount(게시글 좋아요 수 갱신) 스케줄링 작업 시작");
+
         Set<String> keys = new HashSet<>();
         Cursor<byte[]> cursor = stringRedisTemplate.getConnectionFactory().getConnection()
                 .scan(ScanOptions.scanOptions().match("post:like:*").count(100).build());
