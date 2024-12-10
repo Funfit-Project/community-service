@@ -1,5 +1,8 @@
 server:
-  port: 8083
+  port: 8080
+  tomcat:
+    mbeanregistry:
+      enabled: true
 eureka:
   instance:
     prefer-ip-address: true
@@ -15,7 +18,7 @@ spring:
   datasource:
     url: jdbc:mysql://community_mysql:3306/community?useSSL=false&allowPublicKeyRetrieval=true
     username: root
-    password: # ${DATASOURCE_PASSWORD}
+    password: ${DATASOURCE_PASSWORD}
     hikari:
       connection-timeout: 5000
   jpa:
@@ -40,7 +43,6 @@ spring:
     redis:
       host: redis
       port: 6379
-
 resilience4j.circuitbreaker:
   configs:
     default:
@@ -55,8 +57,9 @@ logging:
   level:
     org:
       hibernate.SQL: debug
+
 jwt:
-  secret: # ${JWT_SECRET}
+  secret: ${JWT_SECRET}
 
 springdoc:
   api-docs:
@@ -72,3 +75,8 @@ springdoc:
 openapi:
   service:
     url: gateway-service
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"

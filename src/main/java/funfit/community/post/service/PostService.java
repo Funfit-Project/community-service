@@ -22,7 +22,6 @@ import java.util.Optional;
 
 @Slf4j
 @Service
-@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class PostService {
 
@@ -31,6 +30,7 @@ public class PostService {
     private final BookmarkRepository bookmarkRepository;
     private final UserDataProvider userDataProvider;
     private final PostLikeRedisService postLikeRedisService;
+
     @Transactional
     public long create(CreatePostRequest createPostRequest, String email) {
         Post post = Post.create(email, createPostRequest.getTitle(), createPostRequest.getContent(), Category.find(createPostRequest.getCategoryName()));
@@ -63,11 +63,13 @@ public class PostService {
 
     @Transactional
     public void likePost(long postId, String email) {
-        postRepository.findById(postId)
-                        .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
-        postLikeRedisService.likePost(postId, email);
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
+
+        postLikeRedisService.likePost(email, post);
     }
 
+    @Transactional(readOnly = true)
     public ReadPostResponse readPost(Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND));
@@ -76,6 +78,7 @@ public class PostService {
                 post.getCreatedAt(), post.getUpdatedAt(), post.getBookmarkCount(), post.getLikeCount(), post.getViews());
     }
 
+    @Transactional(readOnly = true)
     public Slice<ReadPostInListResponse> readPostList(Pageable pageable) {
         return postRepository.findAll(pageable)
                 .map(post -> {
@@ -86,6 +89,7 @@ public class PostService {
                 });
     }
 
+    @Transactional(readOnly = true)
     public BestPostsResponse readBestPosts(LocalDateTime time) {
         return bestPostCacheService.readBestPosts(time);
     }

@@ -54,6 +54,8 @@ public class BestPostCacheService {
     @Scheduled(cron = "0 0 * * * *") // 매 시간 정각마다 실행
     @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 1.5, maxDelay = 5000))
     public void cacheBestPostsDto() {
+        log.info("cacheBestPostsDto(인기글 추출) 스케줄링 작업 시작");
+
         updateTime();
 
         Set<String> postIds = stringRedisTemplate.opsForZSet().reverseRange(POST_VIEWS_PREFIX + previousTime, 0, 9);
@@ -61,6 +63,7 @@ public class BestPostCacheService {
 
         BestPostsResponse bestPostsResponse = new BestPostsResponse(previousTime, getPostResponse(postIds));
         bestPostsRedisTemplate.opsForValue().set(BEST_POSTS_PREFIX + previousTime, bestPostsResponse);
+        log.info("cacheBestPostsDto(인기글 추출) 스케줄링 작업 종료");
     }
 
     private List<ReadPostInListResponse> getPostResponse(Set<String> postIds) {
