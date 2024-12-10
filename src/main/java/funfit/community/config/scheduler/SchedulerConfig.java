@@ -13,6 +13,8 @@ public class SchedulerConfig {
         ThreadPoolTaskScheduler threadPoolTaskScheduler = new ThreadPoolTaskScheduler();
         threadPoolTaskScheduler.setPoolSize(2);
         threadPoolTaskScheduler.setThreadNamePrefix("scheduler-");
+        threadPoolTaskScheduler.setWaitForTasksToCompleteOnShutdown(true);
+        threadPoolTaskScheduler.setAwaitTerminationSeconds(60);
         return threadPoolTaskScheduler;
     }
 }
